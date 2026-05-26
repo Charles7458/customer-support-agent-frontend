@@ -3,6 +3,7 @@
 export interface AuthCredentials {
   email: string;
   password: string;
+  rememberMe: boolean
 }
 
 export interface SignupCredentials extends AuthCredentials {
@@ -12,12 +13,9 @@ export interface SignupCredentials extends AuthCredentials {
 }
 
 export interface AuthResponse {
-  token: string;
-  refreshToken: string;
   user: {
-    id: string;
-    email: string;
     fullName: string;
+    email:string;
     avatar?: string;
   };
 }

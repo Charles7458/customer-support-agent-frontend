@@ -1,9 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { MessageBubble, AITypingRow, SecurityBanner } from '../components/ChatMessage';
 import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import type { ChatMessage } from '../types';
+import { Avatar } from '../components/ui';
 import { mockConversations } from '../data/mockData';
+import { useAuth } from '../hooks/useAuth';
+import { NavLink } from 'react-router-dom';
 
 function BellIcon() {
   return (
@@ -12,14 +15,14 @@ function BellIcon() {
     </svg>
   );
 }
-function PersonIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="9" cy="6" r="4" />
-      <path d="M1 18c0-4.4 3.6-8 8-8s8 3.6 8 8" />
-    </svg>
-  );
-}
+// function PersonIcon() {
+//   return (
+//     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+//       <circle cx="9" cy="6" r="4" />
+//       <path d="M1 18c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+//     </svg>
+//   );
+// }
 function SendIcon() {
   return (
     <svg width="19" height="16" viewBox="0 0 19 16" fill="white">
@@ -49,6 +52,8 @@ export default function ConversationsPage() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const authContext = useAuth();
+  const user = authContext.user;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -105,7 +110,9 @@ export default function ConversationsPage() {
           </div>
           <div className="flex items-center gap-3 text-[#45464d] dark:text-[#9aa3bf]">
             <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f7f9fb] dark:hover:bg-[#1e2535] transition-colors"><BellIcon /></button>
-            <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f9fb] dark:hover:bg-[#1e2535] transition-colors"><PersonIcon /></button>
+            <NavLink to="/profile">
+              <Avatar initials={user?.fullName.charAt(0) || "U"} />
+            </NavLink>
           </div>
         </header>
 
@@ -132,7 +139,7 @@ export default function ConversationsPage() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                placeholder="Type a message or use '/' for commands..."
+                placeholder="Type a message"
                 rows={1}
                 className="flex-1 bg-transparent text-[#191c1e] dark:text-[#e2e4ef] text-sm placeholder:text-[#45464d] dark:placeholder:text-[#4a5068] resize-none outline-none py-3 px-2 max-h-[150px] leading-relaxed"
                 style={{ minHeight: '44px' }}

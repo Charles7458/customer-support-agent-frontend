@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../hooks/UseAuth';
+import { useAuth } from '../hooks/useAuth';
 import { Input, Checkbox } from '../components/FormInputs';
 import { Button } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
@@ -89,10 +89,11 @@ function LoginPage() {
     }
 
     try {
-      await login({ email, password });
-      // Will auto-navigate via useEffect
+      await login({ email, password, rememberMe });
+      // Redirect happens automatically via ProtectedRoute when isAuthenticated becomes true
+      navigate('/conversations', { replace: true });
     } catch {
-      // Error is handled by context
+      // Error is handled by context and displayed in error state
     }
   };
 
@@ -183,7 +184,6 @@ function LoginPage() {
               error={localError.email}
               autoComplete="email"
               disabled={isLoading}
-              className='ps-10'
             />
 
             {/* Password */}
@@ -196,6 +196,7 @@ function LoginPage() {
                   to="/forgot-password"
                   className="text-xs text-[#0058be] dark:text-[#4a9eff] hover:underline"
                 >
+                  Forgot?
                 </Link>
               </div>
               <div className="relative">
@@ -237,7 +238,7 @@ function LoginPage() {
             {/* Remember me */}
             <Checkbox
               checked={rememberMe}
-              onChange={(e: any) => setRememberMe(e.target.checked)}
+              onChange={e => setRememberMe(e.target.checked)}
               label="Remember me for 30 days"
               disabled={isLoading}
             />

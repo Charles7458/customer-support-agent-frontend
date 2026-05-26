@@ -29,6 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               error
                 ? 'border-[#ba1a1a] dark:border-[#f9dedc] focus:border-[#ba1a1a] focus:ring-[#ba1a1a]/20'
                 : 'border-[#c6c6cd] dark:border-[#2e3347] focus:border-[#0058be]',
+              icon ? 'pl-10' : '',
               className,
             )}
             {...props}
@@ -71,9 +72,9 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, er
             'cursor-pointer transition-all duration-200 shrink-0',
             'checked:bg-[#0058be] checked:border-[#0058be] dark:checked:bg-[#0058be]',
             'focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 focus:border-[#0058be]',
-            'checked:after:content-[\'\'] checked:after:block checked:after:w-1 checked:after:h-2',
+            'checked:after:content-[] checked:after:block checked:after:w-1 checked:after:h-2',
             'checked:after:border-white checked:after:border-r-[2px] checked:after:border-b-[2px]',
-            'checked:after:absolute checked:after:top-[-1px] checked:after:left-[3px] checked:after:-rotate-45',
+            'checked:after:relative checked:after:top-[-1px] checked:after:left-[3px]',
             error && 'border-[#ba1a1a] dark:border-[#f9dedc]',
             className,
           )}

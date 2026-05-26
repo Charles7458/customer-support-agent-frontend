@@ -1,30 +1,74 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import type { AuthResponse, SignupCredentials, AuthCredentials, AuthState } from '../types/auth';
 
 interface AuthContextValue extends AuthState {
   login: (credentials: AuthCredentials) => Promise<void>;
-  signup: (credentials: SignupCredentials) => Promise<void>;
-  logout: () => void;
+  signup: (credentials: SignupCredentials & { rememberMe?: boolean }) => Promise<void>;
+  logout: () => Promise<void>;
   clearError: () => void;
+  checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const AUTH_URL = 'http://localhost:8000/auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isLoading: false,
     error: null,
-    isAuthenticated: !!localStorage.getItem('nexus-auth-token'),
-    user: localStorage.getItem('nexus-user') ? JSON.parse(localStorage.getItem('nexus-user')!) : null,
+    isAuthenticated: false,
+    user: null,
   });
 
-  const login = useCallback(async (credentials: AuthCredentials) => {
-    setState((prev:any) => ({ ...prev, isLoading: true, error: null }));
+  // Check authentication status on mount
+  const checkAuth = useCallback(async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setState(prev => ({ ...prev, isLoading: true }));
 
-      // Mock validation
+      // Try to fetch current user from backend (validates if cookie/session is still valid)
+      const res = await fetch(`${AUTH_URL}/me`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        const response = await res.json();
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: true,
+          user: response.user,
+          error: null,
+        }));
+        console.log(response.user)
+      } else {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: false,
+          user: null,
+        }));
+      }
+    } catch (err) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        isAuthenticated: false,
+        user: null,
+      }));
+    }
+  }, []);
+
+  // Check auth on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const login = useCallback(async (credentials: AuthCredentials) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    try {
+      // Client-side validation
       if (!credentials.email.includes('@')) {
         throw { code: 'INVALID_EMAIL', message: 'Invalid email address', field: 'email' };
       }
@@ -32,33 +76,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw { code: 'WEAK_PASSWORD', message: 'Password must be at least 6 characters', field: 'password' };
       }
 
-      const mockResponse: AuthResponse = {
-        token: 'mock-jwt-token-' + Date.now(),
-        refreshToken: 'mock-refresh-token-' + Date.now(),
-        user: {
-          id: 'user-' + Date.now(),
-          email: credentials.email,
-          fullName: credentials.email.split('@')[0],
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${credentials.email}`,
+      const login_url = `${AUTH_URL}/login`;
+
+      const res = await fetch(login_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      };
+        credentials: 'include',
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+          remember_me: credentials.rememberMe
+        }),
+      });
 
-      localStorage.setItem('nexus-auth-token', mockResponse.token);
-      localStorage.setItem('nexus-user', JSON.stringify(mockResponse.user));
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw {
+          code: 'LOGIN_FAILED',
+          message: errorData.message || 'Login failed. Please try again.',
+        };
+      }
 
-      setState((prev:any) => ({
+      const response = await res.json();
+
+      // Check if response indicates success
+      if (response.message && response.message !== 'Successful') {
+        throw new Error(response.message);
+      }
+
+      if (!response.user) {
+        throw new Error('No user data returned from server');
+      }
+
+      setState(prev => ({
         ...prev,
         isLoading: false,
         isAuthenticated: true,
-        user: mockResponse.user,
+        user: response.user,
+        error: null,
       }));
+
+      console.log('Login successful:', response);
     } catch (err: any) {
-      setState((prev:any) => ({
+      const errorMessage = err.message || 'Login failed. Please try again.';
+      setState(prev => ({
         ...prev,
         isLoading: false,
         error: {
           code: err.code || 'LOGIN_FAILED',
-          message: err.message || 'Login failed. Please try again.',
+          message: errorMessage,
           field: err.field,
         },
       }));
@@ -66,13 +134,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signup = useCallback(async (credentials: SignupCredentials) => {
-    setState((prev:any) => ({ ...prev, isLoading: true, error: null }));
+  const signup = useCallback(async (credentials: SignupCredentials & { rememberMe?: boolean }) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1200));
-
-      // Mock validation
+      // Client-side validation
       if (!credentials.fullName.trim()) {
         throw { code: 'INVALID_NAME', message: 'Full name is required', field: 'fullName' };
       }
@@ -89,33 +154,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw { code: 'TERMS_NOT_AGREED', message: 'You must agree to the terms', field: 'agreeToTerms' };
       }
 
-      const mockResponse: AuthResponse = {
-        token: 'mock-jwt-token-' + Date.now(),
-        refreshToken: 'mock-refresh-token-' + Date.now(),
-        user: {
-          id: 'user-' + Date.now(),
-          email: credentials.email,
-          fullName: credentials.fullName,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${credentials.email}`,
+      const signup_url = `${AUTH_URL}/signup`;
+
+      const res = await fetch(signup_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      };
+        credentials: 'include',
+        body: JSON.stringify({
+          full_name: credentials.fullName,
+          email: credentials.email,
+          password: credentials.password,
+          agree_to_terms: credentials.agreeToTerms,
+          remember_me: credentials.rememberMe || false
+        }),
+      });
 
-      localStorage.setItem('nexus-auth-token', mockResponse.token);
-      localStorage.setItem('nexus-user', JSON.stringify(mockResponse.user));
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw {
+          code: 'SIGNUP_FAILED',
+          message: errorData.message || 'Signup failed. Please try again.',
+        };
+      }
 
-      setState((prev:any) => ({
+      const response = await res.json();
+
+      // Check if response indicates success
+      if (response.message && response.message !== 'Successful') {
+        throw new Error(response.message);
+      }
+
+      if (!response.user) {
+        throw new Error('No user data returned from server');
+      }
+
+      setState(prev => ({
         ...prev,
         isLoading: false,
         isAuthenticated: true,
-        user: mockResponse.user,
+        user: response.user,
+        error: null,
       }));
+
+      console.log('Signup successful:', response);
     } catch (err: any) {
-      setState((prev:any) => ({
+      const errorMessage = err.message || 'Signup failed. Please try again.';
+      setState(prev => ({
         ...prev,
         isLoading: false,
         error: {
           code: err.code || 'SIGNUP_FAILED',
-          message: err.message || 'Signup failed. Please try again.',
+          message: errorMessage,
           field: err.field,
         },
       }));
@@ -123,23 +214,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('nexus-auth-token');
-    localStorage.removeItem('nexus-user');
-    setState({
-      isLoading: false,
-      error: null,
-      isAuthenticated: false,
-      user: null,
-    });
+  const logout = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+
+      // Call backend logout to clear cookie
+      await fetch(`${AUTH_URL}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {
+        // Continue even if logout request fails
+      });
+
+      setState({
+        isLoading: false,
+        error: null,
+        isAuthenticated: false,
+        user: null,
+      });
+
+      console.log('Logout successful');
+    } catch (err) {
+      console.error('Logout error:', err);
+      setState({
+        isLoading: false,
+        error: null,
+        isAuthenticated: false,
+        user: null,
+      });
+    }
   }, []);
 
   const clearError = useCallback(() => {
-    setState((prev:any) => ({ ...prev, error: null }));
+    setState(prev => ({ ...prev, error: null }));
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, signup, logout, clearError }}>
+    <AuthContext.Provider value={{ ...state, login, signup, logout, clearError, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

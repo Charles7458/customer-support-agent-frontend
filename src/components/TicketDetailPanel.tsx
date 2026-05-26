@@ -65,7 +65,7 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet }: TicketDeta
         <div className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-xl p-4">
           <p className="text-[11px] font-medium tracking-widest text-[#45464d] dark:text-[#9aa3bf] uppercase mb-3">Customer Context</p>
           <div className="flex items-center gap-3 mb-3">
-            <Avatar initials={ticket.customer.avatarInitials} bgColor={ticket.customer.avatarColor} size="lg" />
+            <Avatar initials={ticket.customer.avatarInitials} />
             <div>
               <p className="font-medium text-sm text-[#0d1117] dark:text-white">{ticket.customer.name}</p>
               <p className="text-xs text-[#45464d] dark:text-[#9aa3bf]">{ticket.customer.email}</p>

@@ -1,12 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../hooks/UseAuth';
+import { useAuth } from '../hooks/useAuth';
 import { Input, Checkbox } from '../components/FormInputs';
 import { Button } from '../components/ui';
-import { useTheme } from '../hooks/useTheme';
 import { cn } from '../utils/cn';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
+const UserIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="9" cy="5.5" r="3.5" />
+    <path d="M2 18c0-3.3 3-6 7-6s7 2.7 7 6" />
+  </svg>
+);
+
 const EmailIcon = () => (
   <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" strokeWidth="1.5">
     <rect x="1" y="1" width="16" height="12" rx="1.5" />
@@ -35,6 +41,12 @@ const EyeOffIcon = () => (
   </svg>
 );
 
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M2 8l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const NexusLogo = () => (
   <svg width="32" height="28" viewBox="0 0 32 28" fill="none">
     <path d="M16 0L32 28H0L16 0Z" fill="currentColor" />
@@ -43,27 +55,21 @@ const NexusLogo = () => (
 
 function SignupPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, signup, isLoading, error, clearError } = useAuth();
-  const { theme } = useTheme();
-  const nameRef = useRef<HTMLInputElement>(null);
+  const { signup, isLoading, error, clearError } = useAuth();
+
+  const fullNameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
+  const termsRef = useRef<HTMLInputElement>(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<Record<string, string>>({});
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/conversations', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
   // Clear error on input change
-  useEffect(() => {
+  const handleInputChange = () => {
     if (error?.field) {
       setLocalError(prev => {
         const newErrors = { ...prev };
@@ -71,25 +77,26 @@ function SignupPage() {
         return newErrors;
       });
     }
-  }, [error?.field]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     setLocalError({});
 
-    const fullName = nameRef.current?.value.trim() || '';
+    const fullName = fullNameRef.current?.value.trim() || '';
     const email = emailRef.current?.value.trim() || '';
     const password = passwordRef.current?.value || '';
     const confirmPassword = confirmPasswordRef.current?.value || '';
+    const agreeToTerms = termsRef.current?.checked || false;
 
     // Client-side validation
     const newErrors: Record<string, string> = {};
-    if (!fullName) newErrors.name = 'Name is required';
+    if (!fullName) newErrors.fullName = 'Full name is required';
     if (!email) newErrors.email = 'Email is required';
     if (!password) newErrors.password = 'Password is required';
-    if (!confirmPassword || confirmPassword != password) newErrors.confirmPassword = 'Password should match the original';
-    if (!agreeToTerms) newErrors.agree = 'Agree to T&C to proceed';
+    if (!confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    if (!agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
 
     if (Object.keys(newErrors).length > 0) {
       setLocalError(newErrors);
@@ -97,8 +104,16 @@ function SignupPage() {
     }
 
     try {
-      await signup({fullName, email, password, confirmPassword,  agreeToTerms});
-      // Will auto-navigate via useEffect
+      await signup({
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        agreeToTerms,
+        rememberMe,
+      });
+      // Redirect happens via ProtectedRoute when isAuthenticated becomes true
+      navigate('/conversations', { replace: true });
     } catch {
       // Error is handled by context
     }
@@ -129,20 +144,21 @@ function SignupPage() {
           </div>
         </div>
 
-        {/* Feature highlights */}
+        {/* Benefits list */}
         <div className="relative z-10">
-          <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Why join Nexus AI?</h3>
+          <div className="space-y-3">
             {[
-              { icon: '⚡', title: 'Instant Support', desc: 'AI-powered responses in seconds' },
-              { icon: '🎯', title: 'Smart Routing', desc: 'Tickets reach the right agent' },
-              { icon: '📊', title: 'Real Analytics', desc: 'Track support metrics live' },
-            ].map((feature, i) => (
-              <div key={i} className="flex gap-3">
-                <span className="text-2xl">{feature.icon}</span>
-                <div>
-                  <p className="font-semibold text-white">{feature.title}</p>
-                  <p className="text-sm text-white/70">{feature.desc}</p>
+              'AI-powered support that learns from your business',
+              'Unified customer conversations across all channels',
+              'Real-time analytics and performance tracking',
+              'Seamless team collaboration with role-based access',
+            ].map((benefit, i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckIcon />
                 </div>
+                <p className="text-sm text-white/80 leading-relaxed">{benefit}</p>
               </div>
             ))}
           </div>
@@ -150,13 +166,13 @@ function SignupPage() {
 
         {/* Footer quote */}
         <div className="relative z-10 text-white/70 text-sm italic">
-          "Support that works as fast as your business grows."
+          "Join teams that support 1M+ customers daily"
         </div>
       </div>
 
-      {/* Right side — Login Form */}
+      {/* Right side — Signup Form */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 md:px-8 lg:px-16">
-        {/* Mobile brand (shown only on mobile) */}
+        {/* Mobile brand */}
         <div className="md:hidden mb-8 flex items-center gap-2">
           <div className="w-8 h-8 bg-[#0058be] rounded-lg flex items-center justify-center text-white">
             <NexusLogo />
@@ -167,7 +183,12 @@ function SignupPage() {
         {/* Form container */}
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <h1 className="text-3xl md:text-2xl font-black text-[#0d1117] dark:text-white mb-2">Create an account</h1>
+            <h1 className="text-3xl md:text-2xl font-black text-[#0d1117] dark:text-white mb-2">
+              Create your account
+            </h1>
+            <p className="text-[#45464d] dark:text-[#9aa3bf]">
+              Get started with AI-powered customer support
+            </p>
           </div>
 
           {/* Error alert */}
@@ -178,17 +199,17 @@ function SignupPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-
             {/* Full Name */}
             <Input
-              ref={nameRef}
-              label="Full Name"
+              ref={fullNameRef}
+              label="Full name"
               type="text"
               placeholder="John Doe"
-              error={localError.name}
-              autoComplete="name"
+              icon={<UserIcon />}
+              error={localError.fullName}
               disabled={isLoading}
-              className='ps-10'
+              onChange={handleInputChange}
+              autoComplete="name"
             />
 
             {/* Email */}
@@ -199,27 +220,21 @@ function SignupPage() {
               placeholder="you@example.com"
               icon={<EmailIcon />}
               error={localError.email}
-              autoComplete="email"
               disabled={isLoading}
-              className='ps-10'
+              onChange={handleInputChange}
+              autoComplete="email"
             />
 
-            {/* Enter Password */}
+            {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <label className="block text-sm font-semibold text-[#191c1e] dark:text-white">
-                  Enter Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-[#0058be] dark:text-[#4a9eff] hover:underline"
-                >
-                </Link>
-              </div>
+              <label className="block text-sm font-semibold text-[#191c1e] dark:text-white mb-2.5">
+                Password
+              </label>
               <div className="relative">
                 <input
                   ref={passwordRef}
                   type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   className={cn(
                     'w-full px-4 py-3 bg-white dark:bg-[#111827] border rounded-lg pl-10 pr-10',
                     'text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#9aa3bf]',
@@ -230,7 +245,8 @@ function SignupPage() {
                     isLoading && 'opacity-60 cursor-not-allowed',
                   )}
                   disabled={isLoading}
-                  autoComplete="current-password"
+                  onChange={handleInputChange}
+                  autoComplete="new-password"
                 />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf] pointer-events-none">
                   <LockIcon />
@@ -249,19 +265,21 @@ function SignupPage() {
                   {localError.password}
                 </p>
               )}
+              <p className="mt-1 text-xs text-[#45464d] dark:text-[#9aa3bf]">
+                At least 8 characters, mix of uppercase and numbers
+              </p>
             </div>
 
             {/* Confirm Password */}
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <label className="block text-sm font-semibold text-[#191c1e] dark:text-white">
-                  Confirm Password
-                </label>
-              </div>
+              <label className="block text-sm font-semibold text-[#191c1e] dark:text-white mb-2.5">
+                Confirm password
+              </label>
               <div className="relative">
                 <input
                   ref={confirmPasswordRef}
                   type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   className={cn(
                     'w-full px-4 py-3 bg-white dark:bg-[#111827] border rounded-lg pl-10 pr-10',
                     'text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#9aa3bf]',
@@ -272,6 +290,8 @@ function SignupPage() {
                     isLoading && 'opacity-60 cursor-not-allowed',
                   )}
                   disabled={isLoading}
+                  onChange={handleInputChange}
+                  autoComplete="new-password"
                 />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf] pointer-events-none">
                   <LockIcon />
@@ -292,12 +312,30 @@ function SignupPage() {
               )}
             </div>
 
-
-            {/* Agree to Terms */}
+            {/* Remember me */}
             <Checkbox
-              checked={agreeToTerms}
-              onChange={(e: any) => setAgreeToTerms(e.target.checked)}
-              label="I agree to the Terms & Conditions"
+              checked={rememberMe}
+              onChange={e => setRememberMe(e.target.checked)}
+              label="Remember me for 30 days"
+              disabled={isLoading}
+            />
+
+            {/* Terms & Conditions */}
+            <Checkbox
+              ref={termsRef}
+              label={
+                <span>
+                  I agree to the{' '}
+                  <Link to="#" className="text-[#0058be] dark:text-[#4a9eff] hover:underline">
+                    Terms of Service
+                  </Link>
+                  {' '}and{' '}
+                  <Link to="#" className="text-[#0058be] dark:text-[#4a9eff] hover:underline">
+                    Privacy Policy
+                  </Link>
+                </span>
+              }
+              error={localError.agreeToTerms}
               disabled={isLoading}
             />
 
@@ -312,10 +350,10 @@ function SignupPage() {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing up...
+                  Creating account...
                 </div>
               ) : (
-                'Sign up'
+                'Create account'
               )}
             </Button>
 
@@ -331,11 +369,11 @@ function SignupPage() {
               </div>
             </div>
 
-            {/* Sign up link */}
+            {/* Login link */}
             <div className="text-center">
               <p className="text-sm text-[#45464d] dark:text-[#9aa3bf]">
-                Have an account?{' '}
-                <Link to="/" className="font-semibold text-[#0058be] dark:text-[#4a9eff] hover:underline">
+                Already have an account?{' '}
+                <Link to="/login" className="font-semibold text-[#0058be] dark:text-[#4a9eff] hover:underline">
                   Sign in
                 </Link>
               </p>
@@ -343,8 +381,8 @@ function SignupPage() {
           </form>
 
           {/* Footer */}
-          <div className="mt-5 pt-6 border-t border-[#c6c6cd] dark:border-[#2e3347] text-center text-xs text-[#45464d] dark:text-[#9aa3bf] space-y-2">
-            <p>By signing up, you agree to our</p>
+          <div className="mt-12 pt-6 border-t border-[#c6c6cd] dark:border-[#2e3347] text-center text-xs text-[#45464d] dark:text-[#9aa3bf] space-y-2">
+            <p>By creating an account, you agree to our</p>
             <div className="flex justify-center gap-2">
               <Link to="#" className="hover:underline">
                 Terms of Service

@@ -46,23 +46,52 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
   );
 }
 
+//───function for avatar bgColor───────────────
+const avatarBgColors = [
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#22c55e",
+  "#10b981",
+  "#14b8a6",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#a855f7",
+  "#ec4899",
+];
+function getAvatarColor(seed:string) {
+
+  let hash = 0;
+
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const index =
+    Math.abs(hash) % avatarBgColors.length;
+
+  return avatarBgColors[index];
+}
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 export function Avatar({
   initials,
-  bgColor,
   size = 'md',
   src,
 }: {
   initials: string;
-  bgColor: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   src?: string;
 }) {
-  const sizes = { sm: 'w-6 h-6 text-[10px]', md: 'w-8 h-8 text-xs', lg: 'w-10 h-10 text-sm' };
+  const sizes = { sm: 'w-6 h-6 text-[10px]', md: 'w-8 h-8 text-xs', lg: 'w-10 h-10 text-sm', xl:'w-20 h-20 text-8xl'};
+  const bgColor = getAvatarColor(initials)
+  const fontSize = {'sm': '100%', 'md':'', 'lg': '', 'xl': '200%'}; 
   return (
     <div
-      className={cn('rounded-full flex items-center justify-center font-semibold text-white shrink-0 overflow-hidden', sizes[size])}
-      style={{ backgroundColor: bgColor }}
+      className={cn('rounded-full flex items-center justify-center font-semibold text-white shrink-0 overflow-hidden cursor-pointer', sizes[size])}
+      style={{ backgroundColor: bgColor, fontSize: fontSize[size] }}
     >
       {src ? <img src={src} alt={initials} className="w-full h-full object-cover" /> : initials}
     </div>

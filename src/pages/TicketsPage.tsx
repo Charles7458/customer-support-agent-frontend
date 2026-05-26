@@ -6,6 +6,8 @@ import { Badge, Avatar, PriorityIcon, Button } from '../components/ui';
 import { mockTickets, mobileMockTickets } from '../data/mockData';
 import type { Ticket } from '../types';
 import { cn } from '../utils/cn';
+import { useAuth } from '../hooks/useAuth';
+import { NavLink } from 'react-router-dom';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -49,13 +51,17 @@ function TicketRow({ ticket, isSelected, onSelect }: { ticket: Ticket; isSelecte
         isSelected ? 'bg-[rgba(0,88,190,0.05)] dark:bg-[rgba(0,88,190,0.1)]' : 'hover:bg-[#f7f9fb] dark:hover:bg-[#1a2236]',
       )}
     >
-
+      {/* {isSelected && (
+        <td className="w-0 p-0">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#0058be] rounded-r-full" />
+        </td>
+      )} */}
       <td className="px-6 py-4 font-mono text-xs text-[#45464d] dark:text-[#9aa3bf] whitespace-nowrap w-[115px]">
         <div className="leading-tight">{ticket.ticketNumber.replace('#TCK-', '#TCK-\n')}</div>
       </td>
       <td className="px-4 py-4 w-[135px]">
         <div className="flex items-center gap-2">
-          <Avatar initials={ticket.customer.avatarInitials} bgColor={ticket.customer.avatarColor} size="sm" />
+          <Avatar initials={ticket.customer.avatarInitials}  size="sm" />
           <span className="text-sm text-[#0d1117] dark:text-white font-medium truncate">{ticket.customer.name}</span>
         </div>
       </td>
@@ -99,7 +105,7 @@ function MobileTicketCard({ ticket, onSelect }: {
           </Badge>
         </div>
         <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#eceef0] dark:border-[#1e2535]">
-          <Avatar initials={ticket.customer.avatarInitials} bgColor={ticket.customer.avatarColor} size="md" />
+          <Avatar initials={ticket.customer.avatarInitials} size="md" />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Customer</p>
             <p className="text-sm font-medium text-[#0d1117] dark:text-white truncate">{ticket.customer.name}</p>
@@ -138,6 +144,9 @@ export default function TicketsPage() {
   const [search, setSearch] = useState('');
   const [mobileSelectedId, setMobileSelectedId] = useState<string | null>(null);
 
+  const authContext = useAuth();
+  const user = authContext.user;
+
   const selectedTicket = mockTickets.find(t => t.id === selectedTicketId) ?? null;
   const mobileSelectedTicket = mockTickets.find(t => t.id === mobileSelectedId) ?? null;
 
@@ -167,7 +176,9 @@ export default function TicketsPage() {
                   <path d="M8 1a6 6 0 0 1 6 6v3l2 2H0l2-2V7a6 6 0 0 1 6-6ZM6 17a2 2 0 0 0 4 0" />
                 </svg>
               </button>
-              <button className="w-9 h-9 bg-[#0058be] rounded-full flex items-center justify-center text-white font-bold text-sm">N</button>
+              <NavLink to="/profile">
+                <Avatar initials={user?.fullName.charAt(0) || "U"} />
+              </NavLink>
             </div>
           </div>
 
