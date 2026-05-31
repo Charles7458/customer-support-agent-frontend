@@ -44,13 +44,13 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
-  timestamp: string;
-  status?: MessageStatus;
-  orderCard?: OrderCard;
-  widget?: MessageWidget;
-  codeBlock?: { language: string; lines: string[] };
-  bulletList?: string[];
-  suggestedActions?: string[];
+  timestamp: string | null;
+  status?: MessageStatus | null;
+  orderCard?: OrderCard | null;
+  widget?: MessageWidget | null;
+  codeBlock?: { language: string; lines: string[] } | null;
+  bulletList?: string[] | null;
+  suggestedActions?: string[] | null;
 }
 
 export interface Conversation {
@@ -63,6 +63,13 @@ export interface Conversation {
   createdAt: string;
   updatedAt: string;
 }
+
+// export interface Conversation {
+//   conv_id: string;
+//   status: 'active' | 'resolved' | 'pending';
+//   created_at: string;
+//   updated_at: string;
+// }
 
 // ─── Ticket Types ──────────────────────────────────────────────────────────────
 export type TicketStatus = 'open' | 'pending' | 'closed' | 'resolved';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { ChatMessage, TrackingWidget } from '../types';
+import type { TrackingWidget } from '../types';
+import type { ChatMessage } from '../utils/chatSocket';
 import { cn } from '../utils/cn';
 import { TypingIndicator } from './ui';
 
@@ -175,7 +176,7 @@ export function MessageBubble({ message, isMobile }: { message: ChatMessage; isM
           <div className="bg-[#131b2e] dark:bg-[#1e2a4a] border border-[rgba(198,198,205,0.2)] rounded-bl-2xl rounded-br-2xl rounded-tl-2xl rounded-tr-sm px-6 py-4 shadow-sm">
             <p className="text-[#7c839b] dark:text-[#8892b0] text-sm leading-relaxed">{message.content}</p>
           </div>
-          <p className="text-right text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1 pr-1">{message.timestamp}</p>
+          {/* <p className="text-right text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1 pr-1">{message.timestamp}</p> */}
         </div>
       </div>
     );
@@ -193,7 +194,7 @@ export function MessageBubble({ message, isMobile }: { message: ChatMessage; isM
           <div className="px-6 py-4">
             <p className="text-[#191c1e] dark:text-[#e2e4ef] text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
 
-            {message.bulletList && (
+            {/* {message.bulletList && (
               <ul className="mt-3 space-y-1.5">
                 {message.bulletList.map((item, i) => (
                   <li key={i} className="flex gap-2 text-sm text-[#45464d] dark:text-[#9aa3bf] leading-relaxed">
@@ -201,9 +202,11 @@ export function MessageBubble({ message, isMobile }: { message: ChatMessage; isM
                     <span>{item}</span>
                   </li>
                 ))}
-              </ul>
+              </ul> 
             )}
+              */}
 
+{/*             
             {message.codeBlock && <CodeBlock lines={message.codeBlock.lines} />}
 
             {message.widget?.type === 'tracking' && <TrackingWidgetCard widget={message.widget} />}
@@ -214,13 +217,13 @@ export function MessageBubble({ message, isMobile }: { message: ChatMessage; isM
                 status={message.orderCard.status}
                 statusColor={message.orderCard.statusColor}
               />
-            )}
+            )} */}
           </div>
         </div>
 
-        {message.suggestedActions && <SuggestedActions actions={message.suggestedActions} />}
+        {/* {message.suggestedActions && <SuggestedActions actions={message.suggestedActions} />} */}
 
-        <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1.5 pl-1">{message.timestamp}</p>
+        {/* <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1.5 pl-1">{message.timestamp}</p> */}
       </div>
     </div>
   );

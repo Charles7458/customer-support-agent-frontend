@@ -2,11 +2,12 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { MessageBubble, AITypingRow, SecurityBanner } from '../components/ChatMessage';
 import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
-import type { ChatMessage } from '../types';
+import { Conversation } from '../types';
 import { Avatar } from '../components/ui';
 import { mockConversations } from '../data/mockData';
 import { useAuth } from '../hooks/useAuth';
 import { NavLink } from 'react-router-dom';
+import { connectSocket, subscribeToMessages, sendMessage, type ChatMessage } from '../utils/chatSocket';
 
 function BellIcon() {
   return (
@@ -46,9 +47,11 @@ function MicIcon() {
   );
 }
 
+const CHAT_URL = "http://localhost:8000/chat"
+
 export default function ConversationsPage() {
-  const conv = mockConversations[0];
-  const [messages, setMessages] = useState<ChatMessage[]>(conv.messages);
+  const [conv, setConv] = useState<Conversation>(mockConversations[0]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -59,32 +62,79 @@ export default function ConversationsPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const sendMessage = () => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  // connect to websocket
+  useEffect(() => {
+    connectSocket();
 
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      role: 'user',
-      content: trimmed,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
+    const unsubscribe = subscribeToMessages(
+      (message: ChatMessage) => {
+        console.log(message)
+        setMessages(prev => [...prev, message]);
+      }
+    );
+
+    return () => {
+      unsubscribe();
     };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsTyping(true);
+  }, []);
 
-    setTimeout(() => {
-      const aiMsg: ChatMessage = {
-        id: `msg-${Date.now()}-ai`,
-        role: 'ai',
-        content: "I've received your message and I'm looking into it right now. Our team will ensure your issue is resolved as quickly as possible.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages(prev => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 2000);
+  const handleSend = () => {
+    const message: ChatMessage = {
+      type: "chat_message",
+      role: "USER",
+      content: input,
+    };
+
+    sendMessage(message);
+
+    setMessages(prev => [...prev, message]);
+
+    setInput("");
   };
+
+
+  // Fetching chat history
+  // useEffect( () => {
+  //   const fetchChat = async () => {
+  //     const res = await fetch(`${CHAT_URL}`, {
+  //       method: 'GET',
+  //       credentials: 'include',
+  //     });
+  //     if(res.ok){
+  //       conv = 
+  //     }
+  //   }
+  //   fetchChat()
+  // },[user])
+
+  // const sendMessage = () => {
+  //   const trimmed = input.trim();
+  //   if (!trimmed) return;
+
+  //   const userMsg: ChatMessage = {
+  //     id: `msg-${Date.now()}`,
+  //     role: 'user',
+  //     content: trimmed,
+  //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  //     status: 'sent',
+  //   };
+
+  //   setMessages(prev => [...prev, userMsg]);
+  //   setInput('');
+  //   setIsTyping(true);
+
+  //   // setTimeout(() => {
+  //   //   const aiMsg: ChatMessage = {
+  //   //     id: `msg-${Date.now()}-ai`,
+  //   //     role: 'ai',
+  //   //     content: "I've received your message and I'm looking into it right now. Our team will ensure your issue is resolved as quickly as possible.",
+  //   //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  //   //   };
+  //   //   setMessages(prev => [...prev, aiMsg]);
+  //   //   setIsTyping(false);
+  //   // }, 2000);
+
+  // };
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] dark:bg-[#0d1117] transition-colors duration-300">
@@ -121,7 +171,7 @@ export default function ConversationsPage() {
           <div className="max-w-[960px] mx-auto px-4 md:px-12 py-8 space-y-8">
             <SecurityBanner />
             {messages.map(msg => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble message={msg} />
             ))}
             {isTyping && <AITypingRow />}
             <div ref={bottomRef} />
@@ -138,7 +188,7 @@ export default function ConversationsPage() {
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 placeholder="Type a message"
                 rows={1}
                 className="flex-1 bg-transparent text-[#191c1e] dark:text-[#e2e4ef] text-sm placeholder:text-[#45464d] dark:placeholder:text-[#4a5068] resize-none outline-none py-3 px-2 max-h-[150px] leading-relaxed"
@@ -149,7 +199,7 @@ export default function ConversationsPage() {
                   <MicIcon />
                 </button>
                 <button
-                  onClick={sendMessage}
+                  onClick={handleSend}
                   disabled={!input.trim()}
                   className="w-10 h-10 rounded-lg bg-[#0058be] hover:bg-[#004ca1] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center shadow transition-all"
                 >
