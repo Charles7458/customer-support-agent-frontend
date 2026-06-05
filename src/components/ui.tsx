@@ -62,7 +62,6 @@ const avatarBgColors = [
   "#ec4899",
 ];
 function getAvatarColor(seed:string) {
-
   let hash = 0;
 
   for (let i = 0; i < seed.length; i++) {
@@ -77,23 +76,26 @@ function getAvatarColor(seed:string) {
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 export function Avatar({
-  initials,
+  name,
+  hover,
   size = 'md',
   src,
 }: {
-  initials: string;
+  name?: string;
+  hover?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   src?: string;
 }) {
   const sizes = { sm: 'w-6 h-6 text-[10px]', md: 'w-8 h-8 text-xs', lg: 'w-10 h-10 text-sm', xl:'w-20 h-20 text-8xl'};
-  const bgColor = getAvatarColor(initials)
-  const fontSize = {'sm': '100%', 'md':'', 'lg': '', 'xl': '200%'}; 
+  const bgColor = getAvatarColor(name || 'U')
+  const fontSize = {'sm': '100%', 'md':'', 'lg': '', 'xl': '200%'};
   return (
     <div
       className={cn('rounded-full flex items-center justify-center font-semibold text-white shrink-0 overflow-hidden cursor-pointer', sizes[size])}
       style={{ backgroundColor: bgColor, fontSize: fontSize[size] }}
+      title={hover || name}
     >
-      {src ? <img src={src} alt={initials} className="w-full h-full object-cover" /> : initials}
+      {src ? <img src={src} alt={name} className="w-full h-full object-cover" /> : name?.charAt(0) || 'U'}
     </div>
   );
 }

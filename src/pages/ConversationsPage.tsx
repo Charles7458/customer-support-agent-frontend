@@ -7,7 +7,11 @@ import { Avatar } from '../components/ui';
 import { mockConversations } from '../data/mockData';
 import { useAuth } from '../hooks/useAuth';
 import { NavLink } from 'react-router-dom';
-import { connectSocket, subscribeToMessages, sendMessage, type ChatMessage } from '../utils/chatSocket';
+import { connectSocket, subscribeToMessages, sendMessage } from '../utils/chatSocket';
+import type { ChatMessage } from '../types';
+import ErrorBoundary from '../components/ErrorBoundary'
+
+
 
 function BellIcon() {
   return (
@@ -53,6 +57,7 @@ export default function ConversationsPage() {
   const [conv, setConv] = useState<Conversation>(mockConversations[0]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [sendingChat, setSendingChat] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const authContext = useAuth();
@@ -70,6 +75,7 @@ export default function ConversationsPage() {
       (message: ChatMessage) => {
         console.log(message)
         setMessages(prev => [...prev, message]);
+        setIsTyping(false)
       }
     );
 
@@ -78,34 +84,70 @@ export default function ConversationsPage() {
     };
   }, []);
 
-  const handleSend = () => {
-    const message: ChatMessage = {
-      type: "chat_message",
-      role: "USER",
-      content: input,
-    };
+  const handleSend = async () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
 
-    sendMessage(message);
+    setSendingChat(true)
+    try {
+    
+      const res = await fetch(CHAT_URL+"/redact",{
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+          },
+        credentials: 'include',
+        body: JSON.stringify({
+          input
+        })
+      })
+        
+      const response = await res.json()
+      console.log(response)
+      // const message: ChatMessage = normalizeChatMessage(response);
+      const message: ChatMessage = {
+        "id": 10,
+        "role": 'CUSTOMER',
+        "content":{
+          "text": response
+        },
+        "sent_at": new Date()
+      };
 
-    setMessages(prev => [...prev, message]);
+      sendMessage(message);
 
-    setInput("");
+      setInput("");
+      setSendingChat(false)
+    }
+    catch(err){
+      console.error(err)
+      setSendingChat(false)
+    }
   };
 
 
   // Fetching chat history
-  // useEffect( () => {
-  //   const fetchChat = async () => {
-  //     const res = await fetch(`${CHAT_URL}`, {
-  //       method: 'GET',
-  //       credentials: 'include',
-  //     });
-  //     if(res.ok){
-  //       conv = 
-  //     }
-  //   }
-  //   fetchChat()
-  // },[user])
+  useEffect( () => {
+    const fetchChat = async () => {
+      const res = await fetch(`${CHAT_URL}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if(res.ok){
+        console.log("Fetched Chat history")
+        const data = await res.json()
+        console.log(data)
+        setConv(data.conversation)
+        setMessages(data.messages)
+        console.log(data.messages)
+      }
+      else {
+         console.log("fetch failed")
+  
+      }
+    }
+    fetchChat()
+  },[user])
 
   // const sendMessage = () => {
   //   const trimmed = input.trim();
@@ -161,26 +203,36 @@ export default function ConversationsPage() {
           <div className="flex items-center gap-3 text-[#45464d] dark:text-[#9aa3bf]">
             <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f7f9fb] dark:hover:bg-[#1e2535] transition-colors"><BellIcon /></button>
             <NavLink to="/profile">
-              <Avatar initials={user?.fullName.charAt(0) || "U"} />
+              <Avatar name={user?.fullName || "U"} hover="Go to Profile" />
             </NavLink>
           </div>
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[960px] mx-auto px-4 md:px-12 py-8 space-y-8">
-            <SecurityBanner />
-            {messages.map(msg => (
-              <MessageBubble message={msg} />
-            ))}
-            {isTyping && <AITypingRow />}
-            <div ref={bottomRef} />
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-[960px] mx-auto px-4 md:px-12 py-8 space-y-8">
+              <SecurityBanner />
+              {messages.map((msg,i) => (
+                <ErrorBoundary>
+                  <MessageBubble key={i} message={msg} role={user?.role || 'CUSTOMER'}/>
+                </ErrorBoundary>
+
+              ))}
+              {isTyping && <AITypingRow />}
+              <div ref={bottomRef} />
+            </div>
           </div>
-        </div>
 
         {/* Input Area */}
         <div className="shrink-0 bg-white dark:bg-[#111827] border-t border-[#c6c6cd] dark:border-[#1e2535] px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:pb-5 mb-[69px] md:mb-0">
           <div className="max-w-[896px] mx-auto">
+            {
+              sendingChat &&
+              <p className="text-right text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1 pr-1">
+                Redacting PII and sending message...
+              </p>
+            }
+            
             <div className="flex items-end gap-2 bg-[#f7f9fb] dark:bg-[#1a2236] border border-[#c6c6cd] dark:border-[#2e3347] rounded-xl p-1 shadow-sm focus-within:border-[#2170e4] focus-within:ring-2 focus-within:ring-[#2170e4]/20 transition-all">
               <button className="w-9 h-9 flex items-center justify-center rounded-full text-[#45464d] dark:text-[#9aa3bf] hover:bg-[#eceef0] dark:hover:bg-[#252c3d] transition-colors shrink-0 mb-1 ml-1">
                 <AttachIcon />
@@ -193,6 +245,7 @@ export default function ConversationsPage() {
                 rows={1}
                 className="flex-1 bg-transparent text-[#191c1e] dark:text-[#e2e4ef] text-sm placeholder:text-[#45464d] dark:placeholder:text-[#4a5068] resize-none outline-none py-3 px-2 max-h-[150px] leading-relaxed"
                 style={{ minHeight: '44px' }}
+                disabled={sendingChat}
               />
               <div className="flex items-center gap-1 mb-1 mr-1 shrink-0">
                 <button className="w-8 h-8 flex items-center justify-center rounded-full text-[#45464d] dark:text-[#9aa3bf] hover:bg-[#eceef0] dark:hover:bg-[#252c3d] transition-colors">

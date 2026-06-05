@@ -15,19 +15,39 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             {/* Auth routes */}
+            {/* normal login */}
             <Route
               path="/login"
               element={
                 <PublicRoute>
-                  <LoginPage />
+                  <LoginPage isSupport={false}/>
                 </PublicRoute>
               }
             />
+            {/* support login */}
+            <Route
+              path="/login/support"
+              element={
+                <PublicRoute>
+                  <LoginPage isSupport={true}/>
+                </PublicRoute>
+              }
+            />
+            {/* normal signup */}
             <Route
               path="/signup"
               element={
                 <PublicRoute>
-                  <SignupPage />
+                  <SignupPage isSupport={false} />
+                </PublicRoute>
+              }
+            />
+            {/* support signup */}
+            <Route
+              path="/signup/support"
+              element={
+                <PublicRoute>
+                  <SignupPage isSupport={true}/>
                 </PublicRoute>
               }
             />

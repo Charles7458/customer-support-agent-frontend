@@ -339,7 +339,7 @@ export default function ProfilePage() {
             <h1 className="text-lg font-semibold text-[#0d1117] dark:text-white hidden md:block">Profile Settings</h1>
             <h1 className="text-lg font-semibold text-[#0d1117] dark:text-white md:hidden">My Profile</h1>
           </div>
-          <Avatar initials={user?.fullName.charAt(0) || 'U'}/>
+          <Avatar name={user?.fullName || 'U'}/>
         </header>
 
         {/* Page Content */}
@@ -348,7 +348,7 @@ export default function ProfilePage() {
             {/* User Avatar Section */}
             <div className="mb-8">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
-                <Avatar initials={user?.fullName.charAt(0) || 'U'} size='xl'/>
+                <Avatar name={user?.fullName || 'U'} size='xl'/>
                 
                 <div>
                   <p className="text-xl font-semibold text-[#0d1117] dark:text-white">{user?.fullName}</p>

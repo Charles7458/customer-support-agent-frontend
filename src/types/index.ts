@@ -2,7 +2,7 @@
 export type Theme = 'light' | 'dark';
 
 // ─── Chat / Conversation Types ─────────────────────────────────────────────────
-export type MessageRole = 'user' | 'ai';
+export type MessageRole = 'CUSTOMER' | 'AI' | 'SUPPORT_AGENT';
 export type MessageStatus = 'sent' | 'delivered' | 'read';
 
 export interface TrackingStep {
@@ -41,27 +41,24 @@ export interface AIInsightWidget {
 export type MessageWidget = TrackingWidget | AIInsightWidget;
 
 export interface ChatMessage {
-  id: string;
+  id: number;
   role: MessageRole;
-  content: string;
-  timestamp: string | null;
-  status?: MessageStatus | null;
-  orderCard?: OrderCard | null;
-  widget?: MessageWidget | null;
-  codeBlock?: { language: string; lines: string[] } | null;
-  bulletList?: string[] | null;
-  suggestedActions?: string[] | null;
+  content: {
+    text : string;
+    order_card?: OrderCard | null;
+    tracking?: { trackingID: string; carrier: string } | null;
+    bullet_list?: string[] | null;
+  }
+  sent_at: Date | string | null;
 }
 
 export interface Conversation {
   id: string;
   title: string;
-  customerName: string;
-  orderId?: string;
-  status: 'active' | 'resolved' | 'pending';
-  messages: ChatMessage[];
-  createdAt: string;
-  updatedAt: string;
+  customer_name: string;
+  agent_name: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // export interface Conversation {
@@ -109,7 +106,7 @@ export interface Ticket {
   lastUpdated: string;
   messages: TicketMessage[];
   aiInsight?: AIInsight;
-  createdAt: string;
+  created_at: string;
 }
 
 // ─── Mobile Ticket Card ────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TrackingWidget } from '../types';
-import type { ChatMessage } from '../utils/chatSocket';
+import type { ChatMessage } from '../types/index.ts';
 import { cn } from '../utils/cn';
 import { TypingIndicator } from './ui';
 
@@ -40,6 +40,30 @@ function OrderCard({ orderId, status, statusColor }: { orderId: string; status: 
 // ─── Code Block ───────────────────────────────────────────────────────────────
 function CodeBlock({ lines }: { lines: string[] }) {
   const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(lines.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="relative bg-[#0d1117] rounded-lg p-4 mt-3 font-mono text-sm">
+      <button
+        onClick={copy}
+        className="absolute top-2 right-2 text-gray-400 hover:text-white text-xs px-2 py-1 rounded"
+      >
+        {copied ? '✓' : '⎘'}
+      </button>
+      {lines.map((line, i) => (
+        <div key={i} className={i === 0 ? 'text-white' : 'text-gray-400'}>{line}</div>
+      ))}
+    </div>
+  );
+}
+
+//
+function TrackIDBlock({ trackingID, carrier }: { trackingID: string, carrier: string }) {
+  const [copied, setCopied] = useState(false);
+  const lines = [`Tracking ID: ${trackingID}`, `Carrier: ${carrier}`]
   const copy = () => {
     navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
@@ -166,17 +190,19 @@ export function SecurityBanner() {
 }
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
-export function MessageBubble({ message, isMobile }: { message: ChatMessage; isMobile?: boolean }) {
-  const isUser = message.role === 'user';
-
+export function MessageBubble({ message, isMobile, role }: { message: ChatMessage; isMobile?: boolean; role:string }) {
+  console.log(message)
+  const isUser = message.role.toLowerCase() === role.toLowerCase();
+  // console.log("user:"+role+"\nmessage_role:"+message.role)
+  const timeString = new Date(message.sent_at || '').toLocaleString() || ''
   if (isUser) {
     return (
-      <div className="flex justify-end">
+      <div className="flex justify-end group">
         <div className={cn('max-w-[80%] md:max-w-[75%]', isMobile && 'max-w-[90%]')}>
           <div className="bg-[#131b2e] dark:bg-[#1e2a4a] border border-[rgba(198,198,205,0.2)] rounded-bl-2xl rounded-br-2xl rounded-tl-2xl rounded-tr-sm px-6 py-4 shadow-sm">
-            <p className="text-[#7c839b] dark:text-[#8892b0] text-sm leading-relaxed">{message.content}</p>
+            <p className="text-[#7c839b] dark:text-[#8892b0] text-sm leading-relaxed">{message.content.text}</p>
           </div>
-          {/* <p className="text-right text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1 pr-1">{message.timestamp}</p> */}
+          <p className="text-right text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1 pr-1">{timeString}</p>
         </div>
       </div>
     );
@@ -192,11 +218,11 @@ export function MessageBubble({ message, isMobile }: { message: ChatMessage; isM
         <div className="relative bg-white dark:bg-[#1a2236] border border-[#c6c6cd] dark:border-[#2e3347] rounded-bl-2xl rounded-br-2xl rounded-tl-sm rounded-tr-2xl shadow-sm border-l-4 border-l-[#2170e4] overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-white/40 to-transparent" />
           <div className="px-6 py-4">
-            <p className="text-[#191c1e] dark:text-[#e2e4ef] text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+            <p className="text-[#191c1e] dark:text-[#e2e4ef] text-sm leading-relaxed whitespace-pre-wrap">{message.content.text}</p>
 
-            {/* {message.bulletList && (
+            {message.content.bullet_list && (
               <ul className="mt-3 space-y-1.5">
-                {message.bulletList.map((item, i) => (
+                {message.content.bullet_list.map((item, i) => (
                   <li key={i} className="flex gap-2 text-sm text-[#45464d] dark:text-[#9aa3bf] leading-relaxed">
                     <span className="text-[#0058be] mt-0.5 shrink-0">•</span>
                     <span>{item}</span>
@@ -204,26 +230,27 @@ export function MessageBubble({ message, isMobile }: { message: ChatMessage; isM
                 ))}
               </ul> 
             )}
-              */}
+             
 
-{/*             
-            {message.codeBlock && <CodeBlock lines={message.codeBlock.lines} />}
+             
+            {message.content.tracking && <TrackIDBlock trackingID={message.content.tracking?.trackingID} carrier={message.content.tracking?.carrier} />}
+{/*
 
             {message.widget?.type === 'tracking' && <TrackingWidgetCard widget={message.widget} />}
-
-            {message.orderCard && (
+*/}
+            {message.content.order_card && (
               <OrderCard
-                orderId={message.orderCard.orderId}
-                status={message.orderCard.status}
-                statusColor={message.orderCard.statusColor}
+                orderId={message.content.order_card.orderId}
+                status={message.content.order_card.status}
+                statusColor={message.content.order_card.statusColor}
               />
-            )} */}
+            )} 
           </div>
         </div>
 
         {/* {message.suggestedActions && <SuggestedActions actions={message.suggestedActions} />} */}
 
-        {/* <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1.5 pl-1">{message.timestamp}</p> */}
+        <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1.5 pl-1">{timeString}</p>
       </div>
     </div>
   );

@@ -53,20 +53,23 @@ const NexusLogo = () => (
   </svg>
 );
 
-function SignupPage() {
+function SignupPage({isSupport}:{isSupport:boolean}) {
   const navigate = useNavigate();
-  const { signup, isLoading, error, clearError } = useAuth();
+  const { signup, supportSignup, isLoading, error, clearError } = useAuth();
 
   const fullNameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
+  const supportSecretRef = useRef<HTMLInputElement>(null);
+
   const termsRef = useRef<HTMLInputElement>(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<Record<string, string>>({});
+  const [showSupportSecret, setShowSupportSecret] = useState(false);
 
   // Clear error on input change
   const handleInputChange = () => {
@@ -118,6 +121,51 @@ function SignupPage() {
       // Error is handled by context
     }
   };
+
+    const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    setLocalError({});
+
+    const fullName = fullNameRef.current?.value.trim() || '';
+    const email = emailRef.current?.value.trim() || '';
+    const password = passwordRef.current?.value || '';
+    const confirmPassword = confirmPasswordRef.current?.value || '';
+    const agreeToTerms = termsRef.current?.checked || false;
+    const supportSecret = supportSecretRef.current?.value || '';
+
+    // Client-side validation
+    const newErrors: Record<string, string> = {};
+    if (!fullName) newErrors.fullName = 'Full name is required';
+    if (!email) newErrors.email = 'Email is required';
+    if (!password) newErrors.password = 'Password is required';
+    if (!confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    if (!agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
+    if (!supportSecret) newErrors.supportSecret = 'Support Secret is required';
+
+
+    if (Object.keys(newErrors).length > 0) {
+      setLocalError(newErrors);
+      return;
+    }
+
+    try {
+      await supportSignup({
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        agreeToTerms,
+        rememberMe,
+        supportSecret
+      });
+      // Redirect happens via ProtectedRoute when isAuthenticated becomes true
+      navigate('/tickets', { replace: true });
+    } catch {
+      // Error is handled by context
+    }
+  };
+  
 
   const displayError = error?.field ? localError[error.field] || error.message : error?.message;
 
@@ -198,7 +246,7 @@ function SignupPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={isSupport ? handleSupportSubmit: handleSubmit} className="space-y-4">
             {/* Full Name */}
             <Input
               ref={fullNameRef}
@@ -311,6 +359,50 @@ function SignupPage() {
                 </p>
               )}
             </div>
+
+            {
+              isSupport && 
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="block text-sm font-semibold text-[#191c1e] dark:text-white">
+                    Support Secret
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    ref={supportSecretRef}
+                    type={showSupportSecret ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    className={cn(
+                      'w-full px-4 py-3 bg-white dark:bg-[#111827] border rounded-lg pl-10 pr-10',
+                      'text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#9aa3bf]',
+                      'outline-none transition-all duration-200',
+                      'border-[#c6c6cd] dark:border-[#2e3347]',
+                      'focus:border-[#0058be] focus:ring-2 focus:ring-[#0058be]/20',
+                      localError.password && 'border-[#ba1a1a]',
+                      isLoading && 'opacity-60 cursor-not-allowed',
+                    )}
+                    disabled={isLoading}
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf] pointer-events-none">
+                    <LockIcon />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSupportSecret(!showSupportSecret)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf] hover:text-[#191c1e] dark:hover:text-white transition-colors"
+                    disabled={isLoading}
+                  >
+                    {showSupportSecret ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+                {localError.supportSecret && (
+                  <p className="mt-1.5 text-xs text-[#ba1a1a] dark:text-[#f9dedc] font-medium">
+                    {localError.supportSecret}
+                  </p>
+                )}
+              </div>
+            }
 
             {/* Remember me */}
             <Checkbox

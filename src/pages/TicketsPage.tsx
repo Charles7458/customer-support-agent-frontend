@@ -61,7 +61,7 @@ function TicketRow({ ticket, isSelected, onSelect }: { ticket: Ticket; isSelecte
       </td>
       <td className="px-4 py-4 w-[135px]">
         <div className="flex items-center gap-2">
-          <Avatar initials={ticket.customer.avatarInitials}  size="sm" />
+          <Avatar name={ticket.customer?.avatarInitials || 'U'}  size="sm" />
           <span className="text-sm text-[#0d1117] dark:text-white font-medium truncate">{ticket.customer.name}</span>
         </div>
       </td>
@@ -105,7 +105,7 @@ function MobileTicketCard({ ticket, onSelect }: {
           </Badge>
         </div>
         <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#eceef0] dark:border-[#1e2535]">
-          <Avatar initials={ticket.customer.avatarInitials} size="md" />
+          <Avatar name={ticket.customer?.avatarInitials || 'U'} size="md" />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Customer</p>
             <p className="text-sm font-medium text-[#0d1117] dark:text-white truncate">{ticket.customer.name}</p>
@@ -177,7 +177,7 @@ export default function TicketsPage() {
                 </svg>
               </button>
               <NavLink to="/profile">
-                <Avatar initials={user?.fullName.charAt(0) || "U"} />
+                <Avatar name={user?.fullName || "U"} />
               </NavLink>
             </div>
           </div>

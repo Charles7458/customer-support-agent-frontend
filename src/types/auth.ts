@@ -3,8 +3,9 @@
 export interface AuthCredentials {
   email: string;
   password: string;
-  rememberMe: boolean
+  rememberMe: boolean;
 }
+
 
 export interface SignupCredentials extends AuthCredentials {
   fullName: string;
@@ -12,11 +13,19 @@ export interface SignupCredentials extends AuthCredentials {
   agreeToTerms: boolean;
 }
 
+export interface SupportAuthCredentials extends AuthCredentials{
+  supportSecret: string;
+}
+
+export interface SupportSignupCredentials extends SignupCredentials {
+  supportSecret: string;
+}
+
 export interface AuthResponse {
   user: {
     fullName: string;
     email:string;
-    avatar?: string;
+    role: string;
   };
 }
 

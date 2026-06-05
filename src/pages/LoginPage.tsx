@@ -41,14 +41,17 @@ const NexusLogo = () => (
   </svg>
 );
 
-function LoginPage() {
+function LoginPage({isSupport}:{isSupport:boolean}) {
   const navigate = useNavigate();
-  const { isAuthenticated, login, isLoading, error, clearError } = useAuth();
+  const { isAuthenticated, login, supportLogin, isLoading, error, clearError } = useAuth();
   const { theme } = useTheme();
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const supportSecretRef = useRef<HTMLInputElement>(null);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showSupportSecret, setShowSupportSecret] = useState(false);
+
   const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<Record<string, string>>({});
 
@@ -96,6 +99,35 @@ function LoginPage() {
       // Error is handled by context and displayed in error state
     }
   };
+
+  const handleSupportSubmit = async (e: React.FormEvent) => {    
+    e.preventDefault()
+    clearError();
+    setLocalError({});
+
+    const email = emailRef.current?.value.trim() || '';
+    const password = passwordRef.current?.value || '';
+    const supportSecret = supportSecretRef.current?.value || '';
+
+    // Client-side validation
+    const newErrors: Record<string, string> = {};
+    if (!email) newErrors.email = 'Email is required';
+    if (!password) newErrors.password = 'Password is required';
+    if (!supportSecret) newErrors.supportSecret = 'Support Secret is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setLocalError(newErrors);
+      return;
+    }
+
+    try {
+      await supportLogin({ email, password, rememberMe ,supportSecret});
+      // Redirect happens automatically via ProtectedRoute when isAuthenticated becomes true
+      navigate('/tickets', { replace: true });
+    } catch {
+      // Error is handled by context and displayed in error state
+    }
+  }
 
   const displayError = error?.field ? localError[error.field] || error.message : error?.message;
 
@@ -173,7 +205,7 @@ function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={isSupport ? handleSupportSubmit : handleSubmit} className="space-y-4">
             {/* Email */}
             <Input
               ref={emailRef}
@@ -234,6 +266,50 @@ function LoginPage() {
                 </p>
               )}
             </div>
+
+            {
+              isSupport && 
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="block text-sm font-semibold text-[#191c1e] dark:text-white">
+                    Support Secret
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    ref={supportSecretRef}
+                    type={showSupportSecret ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    className={cn(
+                      'w-full px-4 py-3 bg-white dark:bg-[#111827] border rounded-lg pl-10 pr-10',
+                      'text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#9aa3bf]',
+                      'outline-none transition-all duration-200',
+                      'border-[#c6c6cd] dark:border-[#2e3347]',
+                      'focus:border-[#0058be] focus:ring-2 focus:ring-[#0058be]/20',
+                      localError.password && 'border-[#ba1a1a]',
+                      isLoading && 'opacity-60 cursor-not-allowed',
+                    )}
+                    disabled={isLoading}
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf] pointer-events-none">
+                    <LockIcon />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSupportSecret(!showSupportSecret)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf] hover:text-[#191c1e] dark:hover:text-white transition-colors"
+                    disabled={isLoading}
+                  >
+                    {showSupportSecret ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+                {localError.supportSecret && (
+                  <p className="mt-1.5 text-xs text-[#ba1a1a] dark:text-[#f9dedc] font-medium">
+                    {localError.supportSecret}
+                  </p>
+                )}
+              </div>
+            }
 
             {/* Remember me */}
             <Checkbox

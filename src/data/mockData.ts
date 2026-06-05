@@ -1,6 +1,6 @@
 import type { Conversation, Ticket } from '../types';
 
-export const mockConversations: Conversation[] = [
+export const mockConversations: any[] = [
   {
     id: 'conv-1',
     title: 'Active Conversation - Order #12345',
