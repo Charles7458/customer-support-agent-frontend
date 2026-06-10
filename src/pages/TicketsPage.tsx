@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { TicketDetailPanel } from '../components/TicketDetailPanel';
 import { Badge, Avatar, PriorityIcon, Button } from '../components/ui';
-import { mockTickets, mobileMockTickets } from '../data/mockData';
 import type { Ticket } from '../types';
 import { cn } from '../utils/cn';
 import { useAuth } from '../hooks/useAuth';
@@ -40,9 +39,36 @@ const TimerIcon = () => (
     <circle cx="7.5" cy="8" r="5.5" /><path d="M7.5 5v3.5l2 1M5.5 1h4" />
   </svg>
 );
+function get_relative_time(date:Date){
+  const now = new Date().getTime()/1000
+  const past = date.getTime()/1000
 
+  if(now - past >= 31536000){
+    return `${Math.floor((now-past)/31536000)} years ago`
+  }
+  else if (now - past >= 2592000){
+    return `${Math.floor((now-past)/2592000)} months ago`
+  }
+  else if (now - past >= 604800){
+    return `${Math.floor((now-past)/604800)} weeks `.concat(((now - past)%604800 > 0) ? `${((now-past)%604800)/86400} days ago`:'')
+  }
+  else if (now - past >= 86400){
+    return `${Math.floor((now-past)/86400)} days ago`
+  }
+  else if (now - past >= 3600){
+    return `${Math.floor((now - past)/3600)} hours ago`
+  }
+  else if (now - past >= 60){
+    return `${Math.floor((now- past)/60)} mins ago`
+  }
+  else {
+    return `${now - past}s ago`
+  }
+}
 // ─── Desktop Row ──────────────────────────────────────────────────────────────
-function TicketRow({ ticket, isSelected, onSelect }: { ticket: Ticket; isSelected: boolean; onSelect: () => void }) {
+function TicketRow({ ticket, isSelected, onSelect, role }: { ticket: Ticket; isSelected: boolean; onSelect: () => void , role:string}) {
+  const timeString = get_relative_time(new Date(ticket.updated_at)) || "-"
+  const name = role == "CUSTOMER"? ticket.agent_name: ticket.customer_name
   return (
     <tr
       onClick={onSelect}
@@ -57,16 +83,16 @@ function TicketRow({ ticket, isSelected, onSelect }: { ticket: Ticket; isSelecte
         </td>
       )} */}
       <td className="px-6 py-4 font-mono text-xs text-[#45464d] dark:text-[#9aa3bf] whitespace-nowrap w-[115px]">
-        <div className="leading-tight">{ticket.ticketNumber.replace('#TCK-', '#TCK-\n')}</div>
+        <div className="leading-tight">{ticket.ticket_ref.replace('#TKT-', '#TKT-\n')}</div>
       </td>
       <td className="px-4 py-4 w-[135px]">
         <div className="flex items-center gap-2">
-          <Avatar name={ticket.customer?.avatarInitials || 'U'}  size="sm" />
-          <span className="text-sm text-[#0d1117] dark:text-white font-medium truncate">{ticket.customer.name}</span>
+          <Avatar name={name || 'U'}  size="sm" />
+          <span className="text-sm text-[#0d1117] dark:text-white font-medium truncate">{name}</span>
         </div>
       </td>
       <td className="px-4 py-4 max-w-[220px]">
-        <p className="text-sm text-[#191c1e] dark:text-[#e2e4ef] truncate">{ticket.subject}</p>
+        <p className="text-sm text-[#191c1e] dark:text-[#e2e4ef] truncate">{ticket.issue}</p>
       </td>
       <td className="px-4 py-4 w-[93px]">
         <Badge variant={ticket.status}>{ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}</Badge>
@@ -79,16 +105,17 @@ function TicketRow({ ticket, isSelected, onSelect }: { ticket: Ticket; isSelecte
           </span>
         </div>
       </td>
-      <td className="px-6 py-4 text-right text-sm text-[#45464d] dark:text-[#9aa3bf] w-[140px]">{ticket.lastUpdated}</td>
+      <td className="px-6 py-4 text-right text-sm text-[#45464d] dark:text-[#9aa3bf] w-[140px]">{timeString}{" "}{new Date(ticket.updated_at).toLocaleDateString()}</td>
     </tr>
   );
 }
 
 // ─── Mobile Ticket Card ─────────────────────────────────────────────────────────
 function MobileTicketCard({ ticket, onSelect }: {
-  ticket: typeof mobileMockTickets[number];
+  ticket: Ticket;
   onSelect: () => void;
 }) {
+  const timeString = new Date(ticket.updated_at).toLocaleString() || "-"
   return (
     <button
       onClick={onSelect}
@@ -97,24 +124,24 @@ function MobileTicketCard({ ticket, onSelect }: {
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0 mr-2">
-            <p className="text-xs font-mono text-[#45464d] dark:text-[#9aa3bf] mb-1">{ticket.ticketNumber}</p>
-            <p className="text-base font-semibold text-[#0d1117] dark:text-white leading-snug line-clamp-2">{ticket.subject}</p>
+            <p className="text-xs font-mono text-[#45464d] dark:text-[#9aa3bf] mb-1">{ticket.ticket_ref}</p>
+            <p className="text-base font-semibold text-[#0d1117] dark:text-white leading-snug line-clamp-2">{ticket.issue}</p>
           </div>
           <Badge variant={ticket.priority}>
             {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
           </Badge>
         </div>
         <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#eceef0] dark:border-[#1e2535]">
-          <Avatar name={ticket.customer?.avatarInitials || 'U'} size="md" />
+          <Avatar name={ticket.agent_name || 'U'} size="md" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Customer</p>
-            <p className="text-sm font-medium text-[#0d1117] dark:text-white truncate">{ticket.customer.name}</p>
+            <p className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Agent</p>
+            <p className="text-sm font-medium text-[#0d1117] dark:text-white truncate">{ticket.agent_name}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <div className="w-2 h-2 rounded-full" style={{
               backgroundColor: ticket.status === 'open' ? '#ba1a1a' : ticket.status === 'pending' ? '#98805d' : '#6b7280'
             }} />
-            <span className="text-xs text-[#45464d] dark:text-[#9aa3bf]">{ticket.lastUpdated}</span>
+            <span className="text-xs text-[#45464d] dark:text-[#9aa3bf]">{timeString}</span>
           </div>
         </div>
       </div>
@@ -138,23 +165,52 @@ function MobileTicketSheet({ ticket, onClose }: { ticket: Ticket | null; onClose
   );
 }
 
+const TICKET_URL = 'http://localhost:8000/tickets'
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function TicketsPage() {
-  const [selectedTicketId, setSelectedTicketId] = useState<string>(mockTickets[0].id);
-  const [search, setSearch] = useState('');
-  const [mobileSelectedId, setMobileSelectedId] = useState<string | null>(null);
 
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [mobileSelectedId, setMobileSelectedId] = useState<number | null>(null);
   const authContext = useAuth();
   const user = authContext.user;
+  const agentOrUser = user?.role == "CUSTOMER" ? "Agent" : "CUSTOMER"
+  const tableColumns = ['Ticket ID', agentOrUser, 'Subject', 'Status', 'Priority', 'Last Updated']
 
-  const selectedTicket = mockTickets.find(t => t.id === selectedTicketId) ?? null;
-  const mobileSelectedTicket = mockTickets.find(t => t.id === mobileSelectedId) ?? null;
+  const selectedTicket = tickets.find(t => t.id === selectedTicketId) ?? null;
+  const mobileSelectedTicket = tickets.find(t => t.id === mobileSelectedId) ?? null;
 
-  const filtered = mockTickets.filter(t =>
-    t.ticketNumber.toLowerCase().includes(search.toLowerCase()) ||
-    t.subject.toLowerCase().includes(search.toLowerCase()) ||
-    t.customer.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = tickets.filter(t =>
+    t.ticket_ref.toLowerCase().includes(search.toLowerCase()) ||
+    t.issue.toLowerCase().includes(search.toLowerCase()) ||
+    t.customer_name.toLowerCase().includes(search.toLowerCase())
   );
+
+
+// fetch tickets
+  useEffect(() => {
+    async function fetchTickets() {
+      try {
+        let URL = TICKET_URL
+        if(user?.role=='SUPPORT_AGENT'){
+          URL = TICKET_URL+'/support'
+        }
+        const res = await fetch(URL, {
+            method: 'GET',
+            credentials: 'include',
+        })
+
+        const data = await res.json();
+        console.log(data)
+        setTickets(data)
+      } catch(err){
+        console.error(err)
+      }
+    }
+    fetchTickets()
+  },[user])
+
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] dark:bg-[#0d1117] transition-colors duration-300">
@@ -201,7 +257,7 @@ export default function TicketsPage() {
                   className="w-full pl-10 pr-4 py-2.5 bg-[#f7f9fb] dark:bg-[#1a2236] border border-[#c6c6cd] dark:border-[#2e3347] rounded-lg text-sm text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#6b7280] outline-none focus:border-[#2170e4] focus:ring-2 focus:ring-[#2170e4]/20 transition-all"
                 />
               </div>
-              {['Status: All', 'Priority: All', 'Agent: Me'].map(label => (
+              {['Status: All', 'Priority: All'].map(label => (
                 <button key={label} className="flex items-center gap-1 px-3 py-2.5 bg-white dark:bg-[#1a2236] border border-[#c6c6cd] dark:border-[#2e3347] rounded-lg text-sm text-[#191c1e] dark:text-[#e2e4ef] hover:bg-[#f7f9fb] dark:hover:bg-[#252c3d] transition-colors">
                   {label} <ChevronIcon />
                 </button>
@@ -216,7 +272,7 @@ export default function TicketsPage() {
               <table className="w-full min-w-[620px]">
                 <thead className="sticky top-0 z-10 bg-white dark:bg-[#111827] border-b border-[#c6c6cd] dark:border-[#1e2535] shadow-sm">
                   <tr>
-                    {['Ticket ID', 'Customer', 'Subject', 'Status', 'Priority', 'Last Updated'].map((h, i) => (
+                    {tableColumns.map((h, i) => (
                       <th key={h} className={cn('py-4 text-sm font-medium text-[#45464d] dark:text-[#9aa3bf]', i === 0 ? 'px-6 text-left' : i === 5 ? 'px-6 text-right' : 'px-4 text-left')}>
                         {h}
                       </th>
@@ -230,6 +286,7 @@ export default function TicketsPage() {
                       ticket={ticket}
                       isSelected={selectedTicketId === ticket.id}
                       onSelect={() => setSelectedTicketId(ticket.id)}
+                      role={user?.role || "CUSTOMER"}
                     />
                   ))}
                 </tbody>
@@ -240,6 +297,7 @@ export default function TicketsPage() {
             <div className="w-[380px] border-l border-[#c6c6cd] dark:border-[#1e2535] shrink-0 shadow-[-4px_0_12px_rgba(0,0,0,0.02)]">
               <TicketDetailPanel ticket={selectedTicket} />
             </div>
+            
           </div>
         </div>
 
@@ -305,17 +363,17 @@ export default function TicketsPage() {
 
             {/* Ticket cards */}
             <div className="space-y-3 pb-6">
-              {mobileMockTickets
+              { tickets
                 .filter(t =>
-                  t.ticketNumber.toLowerCase().includes(search.toLowerCase()) ||
-                  t.subject.toLowerCase().includes(search.toLowerCase())
+                  t.ticket_ref.toLowerCase().includes(search.toLowerCase()) ||
+                  t.issue.toLowerCase().includes(search.toLowerCase())
                 )
                 .map(t => (
                   <MobileTicketCard
                     key={t.id}
                     ticket={t}
                     onSelect={() => {
-                      const full = mockTickets.find(mt => mt.customer.name === t.customer.name);
+                      const full = tickets.find(mt => mt.customer_name === t.customer_name);
                       setMobileSelectedId(full?.id ?? null);
                     }}
                   />
@@ -323,6 +381,7 @@ export default function TicketsPage() {
             </div>
 
             {/* AI Insight */}
+{/*             
             <div className="bg-gradient-to-br from-[#0058be]/10 to-[#2170e4]/5 dark:from-[#0058be]/20 dark:to-[#2170e4]/10 border border-[#2170e4]/20 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0058be" strokeWidth="2">
@@ -333,8 +392,8 @@ export default function TicketsPage() {
               <p className="text-sm text-[#191c1e] dark:text-[#e2e4ef] leading-relaxed">
                 3 tickets related to "API Authentication" are trending. AI suggests consolidating these into a single master incident for the backend team.
               </p>
-            </div>
-          </div>
+            </div>*/}
+          </div> 
 
           {/* FAB */}
           <button className="fixed right-5 bottom-[calc(69px+16px)] z-30 w-14 h-14 bg-[#0058be] hover:bg-[#004ca1] rounded-full flex items-center justify-center shadow-lg shadow-[#0058be]/30 transition-colors">

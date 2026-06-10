@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage';
 import ConversationsPage from './pages/ConversationsPage';
 import TicketsPage from './pages/TicketsPage';
 import ProfilePage from './pages/ProfilePage';
+import SupportConversationsPage from './pages/SupportConversationsPage';
 
 export default function App() {
   return (
@@ -54,6 +55,15 @@ export default function App() {
 
             {/* Protected routes */}
             <Route
+              path="/support-chat/:conversation_id"
+              element={
+                <ProtectedRoute>
+                  <SupportConversationsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/conversations"
               element={
                 <ProtectedRoute>
@@ -61,6 +71,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/tickets"
               element={

@@ -1,3 +1,5 @@
+import type { MessageRole } from ".";
+
 // ─── Authentication Types ─────────────────────────────────────────────────────
 
 export interface AuthCredentials {
@@ -25,7 +27,7 @@ export interface AuthResponse {
   user: {
     fullName: string;
     email:string;
-    role: string;
+    role: MessageRole;
   };
 }
 

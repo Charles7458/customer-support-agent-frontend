@@ -5,7 +5,7 @@ import { cn } from '../utils/cn';
 import { TypingIndicator } from './ui';
 
 // ─── AI Avatar ────────────────────────────────────────────────────────────────
-function AIAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
+export function AIAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const s = size === 'sm' ? 'w-6 h-6' : 'w-10 h-10';
   return (
     <div className={cn('rounded-full bg-[#2170e4] border border-[#2170e4]/50 flex items-center justify-center shrink-0', s)}>
@@ -190,11 +190,20 @@ export function SecurityBanner() {
 }
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
-export function MessageBubble({ message, isMobile, role }: { message: ChatMessage; isMobile?: boolean; role:string }) {
+export function MessageBubble({ message, isMobile, role ,OtherAvatar}: { message: ChatMessage; isMobile?: boolean; role:string ,
+  OtherAvatar: JSX.Element}) {
   console.log(message)
   const isUser = message.role.toLowerCase() === role.toLowerCase();
   // console.log("user:"+role+"\nmessage_role:"+message.role)
-  const timeString = new Date(message.sent_at || '').toLocaleString() || ''
+  const timeString = new Date(message.sent_at || '').toLocaleString('en-US', {
+    year: 'numeric',    // "2026"
+    month: 'short',     // "Jun"
+    day: 'numeric',     // "10"
+    hour: 'numeric',    // "12"
+    minute: '2-digit',  // "39"
+    hour12: true        // Use AM/PM layout
+  }) || ''
+
   if (isUser) {
     return (
       <div className="flex justify-end group">
@@ -210,7 +219,9 @@ export function MessageBubble({ message, isMobile, role }: { message: ChatMessag
 
   return (
     <div className="flex gap-3 md:gap-4 items-start">
-      <AIAvatar size={isMobile ? 'sm' : 'md'} />
+      {
+        OtherAvatar
+      }
       <div className={cn('flex-1 min-w-0', isMobile ? 'max-w-[90%]' : 'max-w-[85%]')}>
         {isMobile && (
           <p className="text-xs text-[#45464d] dark:text-[#9aa3bf] mb-1.5 font-medium">Nexus AI</p>

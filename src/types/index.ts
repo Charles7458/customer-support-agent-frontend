@@ -41,7 +41,7 @@ export interface AIInsightWidget {
 export type MessageWidget = TrackingWidget | AIInsightWidget;
 
 export interface ChatMessage {
-  id: number;
+  id: number | null;
   role: MessageRole;
   content: {
     text : string;
@@ -49,7 +49,7 @@ export interface ChatMessage {
     tracking?: { trackingID: string; carrier: string } | null;
     bullet_list?: string[] | null;
   }
-  sent_at: Date | string | null;
+  sent_at: Date | string ;
 }
 
 export interface Conversation {
@@ -72,22 +72,10 @@ export interface Conversation {
 export type TicketStatus = 'open' | 'pending' | 'closed' | 'resolved';
 export type TicketPriority = 'high' | 'medium' | 'low';
 
-export interface TicketCustomer {
-  id: string;
-  name: string;
-  email: string;
-  avatarInitials: string;
-  avatarColor: string;
-  plan: string;
-  pastTickets: number;
-  openTickets: number;
-}
 
 export interface TicketMessage {
-  id: string;
-  from: string;
-  content: string;
-  timestamp: string;
+  content: ChatMessage["content"];
+  sent_at: Date | string;
 }
 
 export interface AIInsight {
@@ -97,29 +85,30 @@ export interface AIInsight {
 }
 
 export interface Ticket {
-  id: string;
-  ticketNumber: string;
-  subject: string;
+  id: number;
+  ticket_ref: string;
+  conversation_id: string;
+  issue: string;
   status: TicketStatus;
   priority: TicketPriority;
-  customer: TicketCustomer;
-  lastUpdated: string;
-  messages: TicketMessage[];
-  aiInsight?: AIInsight;
+  customer_name: string;
+  agent_name: string;
+  updated_at: string;
   created_at: string;
+  last_message: TicketMessage | null
 }
 
 // ─── Mobile Ticket Card ────────────────────────────────────────────────────────
-export interface MobileTicketCard {
-  id: string;
-  ticketNumber: string;
-  subject: string;
-  status: TicketStatus;
-  priority: TicketPriority;
-  customer: Pick<TicketCustomer, 'name' | 'email' | 'avatarInitials' | 'avatarColor'>;
-  lastUpdated: string;
-  agentInitials?: string;
-}
+// export interface MobileTicketCard {
+//   id: string;
+//   ticketNumber: string;
+//   subject: string;
+//   status: TicketStatus;
+//   priority: TicketPriority;
+//   customer_name: string;
+//   agent_name: string;
+//   updated_at: string;
+// }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 export type NavTab = 'conversations' | 'tickets';

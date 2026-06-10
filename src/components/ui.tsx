@@ -87,7 +87,8 @@ export function Avatar({
   src?: string;
 }) {
   const sizes = { sm: 'w-6 h-6 text-[10px]', md: 'w-8 h-8 text-xs', lg: 'w-10 h-10 text-sm', xl:'w-20 h-20 text-8xl'};
-  const bgColor = getAvatarColor(name || 'U')
+  const initials = name?.split(" ").reduce((accumulator, curr) => accumulator +" "+ curr.charAt(0),"")
+  const bgColor = getAvatarColor(initials || 'U')
   const fontSize = {'sm': '100%', 'md':'', 'lg': '', 'xl': '200%'};
   return (
     <div

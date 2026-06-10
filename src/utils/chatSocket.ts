@@ -1,4 +1,5 @@
 import type { ChatMessage, MessageRole } from "../types";
+import type { Dispatch, SetStateAction } from "react";
 
 type RawChatContent = {
   text?: string;
@@ -20,40 +21,44 @@ type RawChatContent = {
 
 type RawChatMessage = {
   id?: number | string;
-  role?: string;
+  role?: MessageRole;
   content?: RawChatContent | string | null;
-  sentAt?: string | Date | null;
   sent_at?: string | Date | null;
   [key: string]: unknown;
 };
 
-const normalizeChatContent = (content: RawChatMessage['content']): ChatMessage['content'] => {
-  if (typeof content === 'string') {
-    return { text: content, order_card: null, tracking: null, bullet_list: null };
-  }
+type RawJson = {
+  type: string;
+  value: string | RawChatMessage
+}
 
-  const normalizedContent = content ?? {};
-  const tracking = normalizedContent.tracking;
-  const orderCard = normalizedContent.order_card;
+// const normalizeChatContent = (content: RawChatMessage['content']): ChatMessage['content'] => {
+//   if (typeof content === 'string') {
+//     return { text: content, order_card: null, tracking: null, bullet_list: null };
+//   }
 
-  return {
-    text: normalizedContent.text ?? '',
-    tracking: tracking
-      ? {
-          trackingID: tracking.trackingID ?? tracking.tracking_id ?? '',
-          carrier: tracking.carrier ?? '',
-        }
-      : null,
-    order_card: orderCard
-      ? {
-          orderId: orderCard.orderId ?? orderCard.order_id ?? '',
-          status: orderCard.status ?? '',
-          statusColor: orderCard.statusColor ?? orderCard.status_color ?? '',
-        }
-      : null,
-    bullet_list: normalizedContent.bullet_list ?? null,
-  };
-};
+//   const normalizedContent = content ?? {};
+//   const tracking = normalizedContent.tracking;
+//   const orderCard = normalizedContent.order_card;
+
+//   return {
+//     text: normalizedContent.text ?? '',
+//     tracking: tracking
+//       ? {
+//           trackingID: tracking.trackingID ?? tracking.tracking_id ?? '',
+//           carrier: tracking.carrier ?? '',
+//         }
+//       : null,
+//     order_card: orderCard
+//       ? {
+//           orderId: orderCard.orderId ?? orderCard.order_id ?? '',
+//           status: orderCard.status ?? '',
+//           statusColor: orderCard.statusColor ?? orderCard.status_color ?? '',
+//         }
+//       : null,
+//     bullet_list: normalizedContent.bullet_list ?? null,
+//   };
+// };
 
 // export const normalizeChatMessage = (message: RawChatMessage): ChatMessage => ({
 //   ...(typeof message === 'string' ? normalizeChatMessage(JSON.parse(message)) : {
@@ -68,8 +73,8 @@ let socket: WebSocket | null = null;
 
 const listeners: Array<(message: ChatMessage) => void> = [];
 
-export const connectSocket = (): WebSocket => {
-  socket = new WebSocket("ws://localhost:8000/chat/ws");
+export const connectSocket = (chatUrl:string, setIsOnline: Dispatch<SetStateAction<boolean>>, setIsTyping:Dispatch<SetStateAction<boolean>>): WebSocket => {
+  socket = new WebSocket(chatUrl);
 
   socket.onopen = () => {
     console.log("Connected to WebSocket");
@@ -78,10 +83,22 @@ export const connectSocket = (): WebSocket => {
   socket.onmessage = async (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data);
+
+      if(data.type == "status"){
+        if(data.value == "online" || data.value =="offline"){
+          setIsOnline(data.value == "online")
+        }
+        else if(data.value == "typing" || data.value == "stopped"){
+          setIsTyping(data.value == "typing")
+        }
+      }
       
-      listeners.forEach((listener) => {
-        listener(data);
-      });
+      else if(data.type == "message"){
+        listeners.forEach((listener) => {
+          listener(data.value);
+        });
+      }
+
     } catch (error) {
       console.error(
         "Failed to parse websocket message:",
@@ -91,7 +108,9 @@ export const connectSocket = (): WebSocket => {
   };
 
   socket.onclose = () => {
+    sendMessage("offline")
     console.log("WebSocket disconnected");
+    setIsOnline(false)
   };
 
   socket.onerror = (error) => {
@@ -102,19 +121,45 @@ export const connectSocket = (): WebSocket => {
 };
 
 export const sendMessage = (
-  message: ChatMessage
-): void => {
+  message: ChatMessage | string
+): boolean => {
   if (
     socket &&
     socket.readyState === WebSocket.OPEN
   ) {
-    socket.send(JSON.stringify(message));
+    const socketMessage = {
+      "type": "message",
+      "value": message
+    }
+    socket.send(JSON.stringify(socketMessage));
+    return true;
   } else {
     console.warn(
       "Cannot send message. WebSocket is not connected."
     );
+    return false;
   }
 };
+
+export const sendStatus = (
+  status:string): boolean => {
+    if (
+      socket &&
+      socket.readyState === WebSocket.OPEN
+    ) {
+      const statusObject = {
+        "type": "status",
+        "value": status
+      }
+      socket.send(JSON.stringify(statusObject));
+      return true;
+    } else {
+      console.warn(
+        "Cannot send conversation id. WebSocket is not connected."
+      );
+      return false;
+    }
+  }
 
 export const subscribeToMessages = (
   callback: (message: ChatMessage) => void
@@ -131,6 +176,7 @@ export const subscribeToMessages = (
 };
 
 export const disconnectSocket = (): void => {
+  sendMessage("offline")
   socket?.close();
   socket = null;
 };
