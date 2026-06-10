@@ -184,10 +184,8 @@ export interface TicketDetailResponse {
  * Create new ticket request
  */
 export interface CreateTicketRequest {
-  subject: string;
+  issue: string;
   priority: TicketPriority;
-  customerId: string;
-  initialMessage: string;
 }
 
 /**

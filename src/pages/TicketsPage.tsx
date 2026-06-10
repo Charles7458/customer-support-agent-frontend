@@ -3,10 +3,11 @@ import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { TicketDetailPanel } from '../components/TicketDetailPanel';
 import { Badge, Avatar, PriorityIcon, Button } from '../components/ui';
-import type { Ticket } from '../types';
+import type { Ticket, CreateTicketRequest } from '../types';
 import { cn } from '../utils/cn';
 import { useAuth } from '../hooks/useAuth';
 import { NavLink } from 'react-router-dom';
+import { CreateTicketDialog } from '../components/CreateTicketDialog';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -62,7 +63,7 @@ function get_relative_time(date:Date){
     return `${Math.floor((now- past)/60)} mins ago`
   }
   else {
-    return `${now - past}s ago`
+    return `${Math.floor(now - past)}s ago`
   }
 }
 // ─── Desktop Row ──────────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ export default function TicketsPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [mobileSelectedId, setMobileSelectedId] = useState<number | null>(null);
+  const [showTicketDialog,setShowTicketDialog] = useState(false)
   const authContext = useAuth();
   const user = authContext.user;
   const agentOrUser = user?.role == "CUSTOMER" ? "Agent" : "CUSTOMER"
@@ -211,6 +213,35 @@ export default function TicketsPage() {
     fetchTickets()
   },[user])
 
+// create ticket
+  async function handleCreateTicket(data: { issue: string; priority: 'high' | 'medium' | 'low' }){
+    console.log("create ticket entered")
+    const requestBody: CreateTicketRequest = {
+      issue:data.issue,
+      priority:data.priority
+    }
+    const res = await fetch(TICKET_URL+'/create-ticket',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody)
+      }
+    )
+
+    if(!res.ok){
+      const errorData = await res.json().catch(() => ({}));
+      throw {
+        code: 'Ticket_Creation_Failed',
+        message: errorData.message || 'Ticket Creation Failed'
+      }
+    }
+    else {
+      alert("Ticket Created Successfully")
+    }
+  }
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] dark:bg-[#0d1117] transition-colors duration-300">
@@ -242,10 +273,17 @@ export default function TicketsPage() {
           <div className="shrink-0 bg-white dark:bg-[#111827] border-b border-[#c6c6cd] dark:border-[#1e2535] px-6 py-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-medium text-[#0d1117] dark:text-white">All Tickets</h2>
-              <Button size="sm" className="gap-1.5">
+              <Button size="sm" className="gap-1.5" onClick={()=>setShowTicketDialog(true)}>
                 <PlusIcon />
                 New Ticket
               </Button>
+              {/* Dialog */}
+
+              <CreateTicketDialog 
+                  isOpen={showTicketDialog}
+                  onClose={()=>setShowTicketDialog(false)}
+                  onSubmit={handleCreateTicket}
+              />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative flex-1 max-w-[448px]">

@@ -9,7 +9,7 @@ interface DialogProps {
   children?: ReactNode;
   primaryAction?: {
     label: string;
-    onClick: () => void;
+    onClick: (props:any)=>any;
     variant?: 'primary' | 'danger';
     loading?: boolean;
   };

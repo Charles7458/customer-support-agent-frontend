@@ -87,7 +87,7 @@ export function Sidebar() {
           {({ isActive }) => (
             <>
               <ChatIcon active={isActive} />
-              <span className={isActive ? 'text-white' : ''}>Conversations</span>
+              <span className={isActive ? 'text-white' : ''}>AI Chat</span>
             </>
           )}
         </NavLink>
