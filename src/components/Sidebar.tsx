@@ -29,6 +29,25 @@ function TicketIcon({ active }: { active?: boolean }) {
   );
 }
 
+export function SupportChatIcon({active}: { active?: boolean}) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+      {/* Chat bubble base */}
+      <path d="M2 10c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8H6l-3 2v-2H4c-1.1 0-2-.9-2-2V10z" />
+      
+      {/* Left headphone ear cup */}
+      <circle cx="6" cy="10" r="1.5" fill="currentColor" />
+      
+      {/* Right headphone ear cup */}
+      <circle cx="14" cy="10" r="1.5" fill="currentColor" />
+      
+      {/* Headphone band */}
+      <path d="M6 8.5c0-2 1.5-3.5 4-3.5s4 1.5 4 3.5" />
+    </svg>
+  );
+}
+
+
 function NexusLogo() {
   return (
     <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
@@ -56,6 +75,7 @@ function MoonIcon() {
 
 export function Sidebar() {
   const { theme, toggleTheme } = useTheme();
+  const supportChat = sessionStorage.getItem("last_support_chat")
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[280px] bg-white dark:bg-[#111827] border-r border-[#c6c6cd] dark:border-[#1e2535] flex flex-col z-40 transition-colors duration-300">
@@ -109,6 +129,30 @@ export function Sidebar() {
             </>
           )}
         </NavLink>
+
+        {/* Support Chat */}
+
+        {
+          supportChat &&
+          <NavLink
+            to={supportChat}
+            className={({ isActive }) =>
+              `flex items-center gap-4 px-4 py-2 rounded-lg text-[16px] transition-colors duration-150 ${
+                isActive
+                  ? 'bg-[#2170e4] text-white'
+                  : 'text-[#45464d] dark:text-[#9aa3bf] hover:bg-[#f7f9fb] dark:hover:bg-[#1e2535]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <SupportChatIcon active={isActive} />
+                <span className={isActive ? 'text-white' : ''}>Support Chat</span>
+              </>
+            )}
+          </NavLink>
+        }
+
       </nav>
 
       {/* Theme toggle */}

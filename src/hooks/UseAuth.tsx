@@ -13,7 +13,7 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const AUTH_URL = 'http://localhost:8000/auth';
+const AUTH_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({

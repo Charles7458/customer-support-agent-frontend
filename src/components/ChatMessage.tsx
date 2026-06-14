@@ -17,7 +17,7 @@ export function AIAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
 }
 
 // ─── Order Card ────────────────────────────────────────────────────────────────
-function OrderCard({ orderId, status, statusColor }: { orderId: string; status: string; statusColor: string }) {
+function OrderCard({ orderId, status }: { orderId: string; status: string; }) {
   return (
     <div className="flex items-center gap-4 bg-[#f7f9fb] dark:bg-[#1e2535] border border-[#c6c6cd] dark:border-[#2e3347] rounded-xl p-4 mt-3">
       <div className="w-16 h-16 bg-[#eceef0] dark:bg-[#252c3d] rounded-lg flex items-center justify-center shrink-0">
@@ -28,7 +28,7 @@ function OrderCard({ orderId, status, statusColor }: { orderId: string; status: 
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-bold text-[#191c1e] dark:text-white text-sm">{orderId}</p>
-        <p className="text-sm font-medium" style={{ color: statusColor }}>{status}</p>
+        <p className="text-sm font-medium">{status}</p>
       </div>
       <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
         <path d="M1 1l5 5-5 5" stroke="#45464d" strokeWidth="1.5" strokeLinecap="round" />
@@ -251,9 +251,8 @@ export function MessageBubble({ message, isMobile, role ,OtherAvatar}: { message
 */}
             {message.content.order_card && (
               <OrderCard
-                orderId={message.content.order_card.orderId}
+                orderId={message.content.order_card.order_id}
                 status={message.content.order_card.status}
-                statusColor={message.content.order_card.statusColor}
               />
             )} 
           </div>

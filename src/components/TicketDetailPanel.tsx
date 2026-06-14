@@ -2,6 +2,8 @@ import type { Ticket } from '../types';
 import { Badge, Avatar, Button } from './ui';
 import { cn } from '../utils/cn';
 import { Link } from 'react-router-dom';
+import { MessageRole } from '../types';
+import { get_role } from '../pages/ProfilePage';
 
 function StarIcon() {
   return (
@@ -22,9 +24,13 @@ interface TicketDetailPanelProps {
   ticket: Ticket | null;
   onClose?: () => void;
   isMobileSheet?: boolean;
+  role: MessageRole;
+  onUpdateTicket: ()=>void
 }
 
-export function TicketDetailPanel({ ticket, onClose, isMobileSheet }: TicketDetailPanelProps) {
+export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpdateTicket }: TicketDetailPanelProps) {
+
+  const tkt_creator_role = get_role(ticket?.creator_role || 'CUSTOMER')
   if (!ticket) {
     return (
       <div className="flex-1 flex items-center justify-center text-[#45464d] dark:text-[#9aa3bf] text-sm p-8 text-center">
@@ -53,7 +59,11 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet }: TicketDeta
             </button>
           )}
         </div>
-        <h3 className="text-base font-medium text-[#0d1117] dark:text-white leading-snug mb-2">{ticket.issue}</h3>
+        <h3 className="text-base font-medium text-[#0d1117] dark:text-white leading-snug">{ticket.issue}</h3>
+        <div className='flex justify-between mb-3 mt-2'>
+          <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf]">Last Updated:</p>
+          <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf]">{new Date(ticket?.updated_at || "").toLocaleString() || ""}</p>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant={ticket.priority}>{ticket.priority === 'high' ? 'High Priority' : ticket.priority === 'medium' ? 'Med Priority' : 'Low Priority'}</Badge>
           <Badge variant={ticket.status}>{ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}</Badge>
@@ -61,26 +71,27 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet }: TicketDeta
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-2 overflow-y-auto p-4 space-y-2 mb-20">
+      <div className="flex-3 overflow-y-auto p-4 space-y-2 h-[150px] mid:h-[60%]">
           {/* Customer Context */}
-          <div className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-xl p-4 mb">
-            <p className="text-[11px] font-medium tracking-widest text-[#45464d] dark:text-[#9aa3bf] uppercase mb-3">Customer Context</p>
+          <h2>Ticket created by: {" "}{ticket.created_by}{" "}{`(${tkt_creator_role})`}</h2>
+
+          <div className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-xl p-4 mb-5">
+            <p className="text-[11px] font-medium tracking-widest text-[#45464d] dark:text-[#9aa3bf] uppercase mb-3">Customer</p>
             <div className="flex items-center gap-3 mb-3">
               <Avatar name={ticket.customer_name} />
               <div>
                 <p className="font-medium text-sm text-[#0d1117] dark:text-white">{ticket.customer_name}</p>
               </div>
             </div>
+            
           </div>
-        </div>
 
         {/* Latest Message */}
         
         {latestMsg && (
-          <div className='mb-40'>
-            <div className="flex items-center justify-between p-5">
+          <div className='mt-5'>
+            <div className="flex items-center justify-between mb-5">
               <p className="text-[11px] font-medium tracking-widest text-[#45464d] dark:text-[#9aa3bf] uppercase">Latest Message</p>
-              <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf]">{ticket.updated_at}</p>
             </div>
             <div className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-br-xl rounded-bl-xl rounded-tr-xl p-4">
               <p className="text-xs font-semibold text-[#0d1117] dark:text-white mb-2">Hi support team,</p>
@@ -89,9 +100,10 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet }: TicketDeta
             </div>
           </div>
         )}
+        </div>
 
         {/* AI Insights */}
-{/*         
+        {/*         
         {ticket.aiInsight && (
           <div className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-xl p-4 relative overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0058be] to-[#2170e4] rounded-l-xl" />
@@ -112,15 +124,27 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet }: TicketDeta
       // </div> */}
 
       {/* Action Footer */}
-      <div className="shrink-0 bg-white dark:bg-[#111827] border-t border-[#c6c6cd] dark:border-[#1e2535] backdrop-blur-md p-4 space-y-5">
-        <Button variant="ai" className="w-full gap-2">
+      <div className="shrink-0 bg-white dark:bg-[#111827] border-t border-[#c6c6cd] dark:border-[#1e2535] backdrop-blur-md p-4 space-y-5 mt-10">
+        {
+          (role=='SUPPORT_AGENT' || role=='ADMIN') &&
+          <Button className='w-full font-bold text-white bg-yellow-500 hover:bg-yellow-600' variant='secondary' onClick={onUpdateTicket}>
+            Update Ticket
+          </Button>
+        }
+        
+        <Button variant="ai" className="w-full gap-2"
+            disabled = {(ticket.status && (ticket.status=="closed" || ticket.status=="pending")) || false}
+        >
           <StarIcon />
           Generate AI Response
         </Button>
         
-        <Link to={`/support-chat/${ticket.conversation_id}`}>
-          <Button variant="secondary" className="justify-center w-full hover:bg-slate-200 mt-3">Reply</Button>
-        </Link>
+        { ((ticket.status && !(ticket.status=="closed" || ticket.status=="resolved")) || true) &&
+          <Link to={`/support-chat/${ticket.conversation_id}`}>
+            <Button variant="secondary" className="justify-center w-full hover:bg-slate-200 mt-3" 
+            >Reply</Button>
+          </Link>
+        }
       </div>
     </div>
   );

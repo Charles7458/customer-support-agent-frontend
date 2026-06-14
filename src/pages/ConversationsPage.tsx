@@ -52,7 +52,7 @@ function MicIcon() {
   );
 }
 
-const CHAT_URL = "http://localhost:8000/chat"
+const CHAT_URL = `${import.meta.env.VITE_API_URL}/chat`
 
 export default function ConversationsPage() {
   const [conv, setConv] = useState<Conversation>(mockConversations[0]);
@@ -198,7 +198,7 @@ export default function ConversationsPage() {
           <div className="flex flex-col md:hidden">
             <p className="font-bold text-[#0d1117] dark:text-white text-base">Nexus AI</p>
           </div>
-          <div className="hidden md:flex flex-col">
+          <div className=" hidden md:flex flex-col">
             <p className="text-base font-medium text-[#191c1e] dark:text-white">{conv.title}</p>
             {
               isOnline ?

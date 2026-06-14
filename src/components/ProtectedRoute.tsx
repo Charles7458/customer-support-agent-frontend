@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -12,6 +12,13 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation()
+  console.log("location: "+location.pathname)
+  localStorage.setItem("lastPath",location.pathname)
+  
+  if(location.pathname.startsWith("/support-chat")){
+    sessionStorage.setItem("last_support_chat",location.pathname)
+  }
 
   if (isLoading) {
     return (
@@ -51,7 +58,9 @@ export function PublicRoute({ children }: ProtectedRouteProps) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/conversations" replace />;
+    const lastRoute = localStorage.getItem("lastPath")
+    console.log("route in storage:"+lastRoute)
+    return <Navigate to={lastRoute || '/conversations'} replace />;
   }
 
   return <>{children}</>;

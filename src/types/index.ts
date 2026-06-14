@@ -2,8 +2,9 @@
 export type Theme = 'light' | 'dark';
 
 // ─── Chat / Conversation Types ─────────────────────────────────────────────────
-export type MessageRole = 'CUSTOMER' | 'AI' | 'SUPPORT_AGENT';
+export type MessageRole = 'CUSTOMER' | 'AI' | 'SUPPORT_AGENT' | 'ADMIN';
 export type MessageStatus = 'sent' | 'delivered' | 'read';
+export type OrderStatus = 'Ordered' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Delivery Failed'
 
 export interface TrackingStep {
   id: string;
@@ -14,9 +15,9 @@ export interface TrackingStep {
 }
 
 export interface OrderCard {
-  orderId: string;
-  status: string;
-  statusColor: string;
+  order_id: string;
+  product_name: string;
+  status: OrderStatus;
 }
 
 export interface TrackingWidget {
@@ -93,6 +94,8 @@ export interface Ticket {
   priority: TicketPriority;
   customer_name: string;
   agent_name: string;
+  created_by: string;
+  creator_role: string;
   updated_at: string;
   created_at: string;
   last_message: TicketMessage | null
@@ -185,9 +188,13 @@ export interface TicketDetailResponse {
  */
 export interface CreateTicketRequest {
   issue: string;
-  priority: TicketPriority;
+  priority: TicketPriority
 }
 
+export interface CreateTicketRequestSupport extends CreateTicketRequest{
+  customer_email: string;
+  set_me_as_agent: boolean;
+}
 /**
  * POST /api/tickets/:id/ai-response
  * Trigger AI response generation

@@ -41,7 +41,7 @@ export const mockConversations: any[] = [
   },
 ];
 
-export const mockTickets: Ticket[] = [
+export const mockTickets: any[] = [
   {
     id: 'tkt-1',
     ticketNumber: '#TCK-8921',

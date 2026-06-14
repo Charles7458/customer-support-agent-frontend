@@ -183,9 +183,6 @@ function LoginPage({isSupport}:{isSupport:boolean}) {
       <div className="flex-1 flex flex-col justify-center px-6 py-12 md:px-8 lg:px-16">
         {/* Mobile brand (shown only on mobile) */}
         <div className="md:hidden mb-8 flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#0058be] rounded-lg flex items-center justify-center text-white">
-            <NexusLogo />
-          </div>
           <p className="font-black text-lg text-[#0d1117] dark:text-white">Nexus AI</p>
         </div>
 

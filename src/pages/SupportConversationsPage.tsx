@@ -52,7 +52,26 @@ function MicIcon() {
   );
 }
 
-const CHAT_URL = "http://localhost:8000/support-chat"
+function OnlineIndicator({isOnline}: {isOnline: boolean}) {
+  if(isOnline){
+    return(
+      <div className="flex items-center gap-2 mt-0.5">
+        <div className="w-2 h-2 rounded-full bg-[#0058be] shadow-[0_0_8px_rgba(0,88,190,0.6)]" />
+        <span className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Online</span>
+      </div>
+    )
+  }
+
+  return(
+    <div className="flex items-center gap-2 mt-0.5">
+      <div className="w-2 h-2 rounded-full bg-[#656565] shadow-[0_0_8px_rgba(0,88,190,0.6)]" />
+      <span className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Offline</span>
+    </div>
+  )
+              
+}
+
+const CHAT_URL = `${import.meta.env.VITE_API_URL}/support-chat`
 
 export default function SupportConversationsPage() {
   const [conv, setConv] = useState<Conversation>(mockConversations[0]);
@@ -60,7 +79,6 @@ export default function SupportConversationsPage() {
   const [input, setInput] = useState('');
   const [sendingChat, setSendingChat] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
-  const [connected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const authContext = useAuth();
@@ -207,23 +225,12 @@ export default function SupportConversationsPage() {
         <header className="sticky top-0 z-30 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-md border-b border-[#c6c6cd] dark:border-[#1e2535] h-16 flex items-center justify-between px-6 shadow-sm shrink-0">
           {/* Mobile: Hamburger + title */}
           <div className="flex flex-col md:hidden">
-            <p className="font-bold text-[#0d1117] dark:text-white text-base">Nexus AI</p>
+            <p className="font-bold text-[#0d1117] dark:text-white text-base text-ellipsis">{user?.role == "CUSTOMER" ? conv.agent_name : conv.customer_name}</p>
+            <OnlineIndicator isOnline={isOnline}/>
           </div>
           <div className="hidden md:flex flex-col">
             <p className="text-base font-medium text-[#191c1e] dark:text-white">{conv.title}</p>
-            {
-              isOnline ?
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-2 h-2 rounded-full bg-[#0058be] shadow-[0_0_8px_rgba(0,88,190,0.6)]" />
-                <span className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Online</span>
-              </div>
-                :
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-2 h-2 rounded-full bg-[#656565] shadow-[0_0_8px_rgba(0,88,190,0.6)]" />
-                <span className="text-xs text-[#45464d] dark:text-[#9aa3bf]">Offline</span>
-              </div>
-              
-            }
+            <OnlineIndicator isOnline={isOnline}/>
           </div>
           <div className="flex items-center gap-3 text-[#45464d] dark:text-[#9aa3bf]">
             <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f7f9fb] dark:hover:bg-[#1e2535] transition-colors"><BellIcon /></button>
@@ -236,7 +243,7 @@ export default function SupportConversationsPage() {
         {/* Chat Area */}
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-[960px] mx-auto px-4 md:px-12 py-8 space-y-8">
-              <SecurityBanner />
+              {/* <SecurityBanner /> */}
               {messages.map((msg,i) => (
                 <ErrorBoundary>
                   <MessageBubble key={i} message={msg} role={user?.role || 'CUSTOMER'} OtherAvatar={otherAvatar}/>
@@ -254,7 +261,7 @@ export default function SupportConversationsPage() {
             {
               sendingChat &&
               <p className="text-right text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-1 pr-1">
-                Redacting PII and sending message...
+                Sending message...
               </p>
             }
             

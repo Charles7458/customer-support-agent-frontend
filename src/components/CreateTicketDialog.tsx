@@ -1,15 +1,27 @@
 import { useState, useRef } from 'react';
 import { Dialog } from './Dialog';
-import { Input } from './FormInputs';
+import { Checkbox, Input } from './FormInputs';
 import { cn } from '../utils/cn';
+
+
+const EmailIcon = () => (
+  <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="1" y="1" width="16" height="12" rx="1.5" />
+    <path d="M1 3l8 6 8-6" />
+  </svg>
+);
+
 
 interface CreateTicketDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { issue: string; priority: 'high' | 'medium' | 'low' }) => Promise<void>;
+  isSupport: boolean;
+  onSubmitSupport: (data: { issue: string; priority: 'high' | 'medium' | 'low' ; customer_email: string; set_me_as_agent: boolean}) => Promise<void>;
+
 }
 
-const PriorityOption = ({
+export const PriorityOption = ({
   value,
   label,
   selected,
@@ -73,9 +85,13 @@ export function CreateTicketDialog({
   isOpen,
   onClose,
   onSubmit,
+  isSupport,
+  onSubmitSupport
 }: CreateTicketDialogProps) {
   const issueRef = useRef<HTMLTextAreaElement>(null);
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const emailRef = useRef<HTMLInputElement>(null)
+  const [setMeAsAgent, setSetMeAsAgent] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -111,6 +127,43 @@ export function CreateTicketDialog({
     }
   };
 
+    const handleSubmitSupport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    const issue = issueRef.current?.value.trim() || '';
+    const custEmail = emailRef.current?.value.trim() || '';
+    // Validation
+    if (!issue) {
+      setErrors({ issue: 'Please describe the issue' });
+      return;
+    }
+
+    if (issue.length < 10) {
+      setErrors({ issue: 'Issue description must be at least 10 characters' });
+      return;
+    }
+
+    if(custEmail.length < 5 && !custEmail.includes("@")){
+      setErrors({custEmail: 'Enter proper customer email'})
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      console.log(issue+"\n"+priority)
+      await onSubmitSupport({ issue, priority ,customer_email: custEmail, set_me_as_agent: setMeAsAgent});
+      // Reset form
+      if (issueRef.current) issueRef.current.value = '';
+      setPriority('medium');
+      onClose();
+    } catch (err: any) {
+      setErrors({ issue: 'Failed to create ticket' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleClose = () => {
     if (!isSubmitting) {
       setErrors({});
@@ -130,7 +183,7 @@ export function CreateTicketDialog({
       description="Describe your issue and set the priority level"
       primaryAction={{
         label: 'Create Ticket',
-        onClick: handleSubmit,
+        onClick: isSupport ? handleSubmitSupport : handleSubmit,
         loading: isSubmitting,
       }}
       secondaryAction={{
@@ -138,7 +191,7 @@ export function CreateTicketDialog({
         onClick: handleClose,
       }}
     >
-      <form onSubmit={handleSubmit} className="space-y-5" id="CreateTicketForm">
+      <form onSubmit={isSupport ? handleSubmitSupport : handleSubmit} className="space-y-5" id="CreateTicketForm">
         {/* Issue Textarea */}
         <div>
           <label className="block text-sm font-semibold text-[#191c1e] dark:text-white mb-2.5">
@@ -195,6 +248,30 @@ export function CreateTicketDialog({
             />
           </div>
         </div>
+        { isSupport &&
+          <div>
+            <div>
+              <label className="block text-sm font-semibold text-[#191c1e] dark:text-white mb-2.5">
+                Customer Email
+              </label>
+              <Input
+                  ref={emailRef}
+                  type="email"
+                  placeholder="you@example.com"
+                  icon={<EmailIcon />}
+                  error={errors.custEmail}
+                  autoComplete="email"
+                  disabled={isSubmitting}
+              />
+            </div>
+            <Checkbox
+                  checked={setMeAsAgent}
+                  onChange={e => setSetMeAsAgent(e.target.checked)}
+                  label="Set me as agent"
+                  disabled={isSubmitting}
+            />
+        </div>
+      }
       </form>
     </Dialog>
   );

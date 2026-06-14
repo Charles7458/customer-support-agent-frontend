@@ -64,10 +64,28 @@ interface SuccessMessage {
   visible: boolean;
 }
 
+export function get_role(role:string){
+    if(role=="CUSTOMER"){
+      return "Customer"
+    }
+    else if(role=="SUPPORT_AGENT"){
+      return "Agent"
+    }
+    else if(role =="ADMIN"){
+      return "Admin"
+    }
+    else if(role == "Nexus AI"){
+      return "AI"
+    }
+    else{
+      return "Unknown"
+    }
+  }
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout, isLoading: authLoading } = useAuth();
-  const SERVER_URL = "http://localhost:8000/"
+  const SERVER_URL = import.meta.env.VITE_API_URL
 
   // Form states
   const [fullName, setFullName] = useState('');
@@ -353,7 +371,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-xl font-semibold text-[#0d1117] dark:text-white">{user?.fullName}</p>
                   <p className="text-sm text-[#45464d] dark:text-[#9aa3bf]">{user?.email}</p>
-                  <p className="text-xs text-[#45464d] dark:text-[#9aa3bf] mt-1">Account created • Member</p>
+                  <p className="text-xs text-[#45464d] dark:text-[#9aa3bf] mt-1">Account created • {get_role(user?.role || "")}</p>
                 </div>
               </div>
             </div>

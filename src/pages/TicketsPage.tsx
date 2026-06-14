@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { TicketDetailPanel } from '../components/TicketDetailPanel';
+import { Dialog } from '../components/Dialog';
 import { Badge, Avatar, PriorityIcon, Button } from '../components/ui';
-import type { Ticket, CreateTicketRequest } from '../types';
+import type { Ticket, CreateTicketRequest, CreateTicketRequestSupport, MessageRole, TicketPriority, TicketStatus } from '../types';
 import { cn } from '../utils/cn';
 import { useAuth } from '../hooks/useAuth';
 import { NavLink } from 'react-router-dom';
 import { CreateTicketDialog } from '../components/CreateTicketDialog';
+import Pagination from '../components/Pagination';
+import { TicketUpdateDialog } from '../components/TicketUpdateDialog';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -116,7 +119,7 @@ function MobileTicketCard({ ticket, onSelect }: {
   ticket: Ticket;
   onSelect: () => void;
 }) {
-  const timeString = new Date(ticket.updated_at).toLocaleString() || "-"
+  const timeString = get_relative_time(new Date(ticket.updated_at)) || "-"
   return (
     <button
       onClick={onSelect}
@@ -151,7 +154,7 @@ function MobileTicketCard({ ticket, onSelect }: {
 }
 
 // ─── Mobile Ticket Sheet ──────────────────────────────────────────────────────
-function MobileTicketSheet({ ticket, onClose }: { ticket: Ticket | null; onClose: () => void }) {
+function MobileTicketSheet({ ticket,role, onClose , onUpdateTicket}: { ticket: Ticket | null; role:MessageRole ;onClose: () => void ;onUpdateTicket: () => void}) {
   if (!ticket) return null;
   return (
     <div className="fixed inset-0 z-50 md:hidden">
@@ -159,22 +162,35 @@ function MobileTicketSheet({ ticket, onClose }: { ticket: Ticket | null; onClose
       <div className="absolute bottom-0 left-0 right-0 bg-[#f7f9fb] dark:bg-[#0d1117] rounded-t-2xl max-h-[92vh] flex flex-col">
         <div className="w-12 h-1 bg-[#c6c6cd] dark:bg-[#2e3347] rounded-full mx-auto mt-3 mb-1 shrink-0" />
         <div className="flex-1 min-h-0">
-          <TicketDetailPanel ticket={ticket} onClose={onClose} isMobileSheet />
+          <TicketDetailPanel ticket={ticket} onClose={onClose} isMobileSheet onUpdateTicket={onUpdateTicket} role={role}/>
         </div>
       </div>
     </div>
   );
 }
 
-const TICKET_URL = 'http://localhost:8000/tickets'
+
+
+const TICKET_URL = `${import.meta.env.VITE_API_URL}/tickets`
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function TicketsPage() {
 
+  const statuses = ['all', 'open', 'pending', 'closed', 'resolved']
+  const priorities = ['all', 'High', 'Medium', 'Low']
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [totalTicketCount, setTotalTicketCount] = useState(0)
+  const [pendingTicketCount, setPendingTicketCount] = useState(0)
+  const [currentTicketcount, setCurrentTicketCount] = useState(0)
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(0);
+  const [priority, setPriority] = useState(0);
+  const [page, setPage] = useState(1);
   const [mobileSelectedId, setMobileSelectedId] = useState<number | null>(null);
   const [showTicketDialog,setShowTicketDialog] = useState(false)
+  const [showUpdateDialog,setShowUpdateDialog] = useState(false)
+  const [perPage, setPerPage] = useState(10);
   const authContext = useAuth();
   const user = authContext.user;
   const agentOrUser = user?.role == "CUSTOMER" ? "Agent" : "CUSTOMER"
@@ -191,27 +207,48 @@ export default function TicketsPage() {
 
 
 // fetch tickets
-  useEffect(() => {
-    async function fetchTickets() {
+
+async function fetchTickets() {
       try {
-        let URL = TICKET_URL
+        let url = TICKET_URL
         if(user?.role=='SUPPORT_AGENT'){
-          URL = TICKET_URL+'/support'
+          url = TICKET_URL+'/support'
         }
-        const res = await fetch(URL, {
+
+        let reqUrl: URL = new URL(url)
+
+        if(search.trim().length > 0){
+          reqUrl.searchParams.set("search", search.trim())
+        }
+        if(statusFilter > 0){
+          reqUrl.searchParams.set("status", statuses[statusFilter])
+        }
+        if(priority > 0){
+          reqUrl.searchParams.set("priority", priorities[priority].toLowerCase())
+        }
+        reqUrl.searchParams.set("page", `${page}`)
+        reqUrl.searchParams.set("per_page", `${perPage}`)
+
+        const res = await fetch(reqUrl, {
             method: 'GET',
             credentials: 'include',
         })
 
         const data = await res.json();
         console.log(data)
-        setTickets(data)
+        setTotalTicketCount(data.total)
+        setPendingTicketCount(data.pending)
+        setCurrentTicketCount(data.current)
+        setTickets(data.ticket_list)
       } catch(err){
         console.error(err)
       }
     }
+
+  //fetch tickets at page load 
+  useEffect(() => {
     fetchTickets()
-  },[user])
+  },[user, page])
 
 // create ticket
   async function handleCreateTicket(data: { issue: string; priority: 'high' | 'medium' | 'low' }){
@@ -240,8 +277,74 @@ export default function TicketsPage() {
     }
     else {
       alert("Ticket Created Successfully")
+      fetchTickets()
     }
   }
+
+  // create ticket for support agent
+    async function handleCreateTicketSupport(data: { issue: string; priority: 'high' | 'medium' | 'low' ; customer_email: string; set_me_as_agent:boolean}){
+    console.log("create ticket entered")
+    const requestBody: CreateTicketRequestSupport = {
+      issue:data.issue,
+      priority:data.priority,
+      customer_email: data.customer_email,
+      set_me_as_agent: data.set_me_as_agent
+    }
+    const res = await fetch(TICKET_URL+'/support/create-ticket',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody)
+      }
+    )
+
+    if(!res.ok){
+      const errorData = await res.json().catch(() => ({}));
+    }
+    else {
+      alert("Ticket Created Successfully")
+      // fetchTickets()
+    }
+  }
+
+// handle ticket status update
+async function handleTicketUpdate(data : {id:number, issue:string, priority: TicketPriority, status:TicketStatus}){
+  const res = await fetch(TICKET_URL+'/update',
+    {
+      method: 'PUT',
+      headers: {"Content-Type": "application/json"},
+      credentials: 'include',
+      body: JSON.stringify({
+        "ticket_id": data.id,
+        "status": data.status,
+        "issue": data.issue,
+        "priority": data.priority
+      })
+    }
+  )
+  if(!res.ok){
+    const errorData = await res.json().catch(() => ({}));
+    throw {
+        code: 'Ticket_Creation_Failed',
+        message: errorData.message || 'Ticket Updation Failed'
+      }
+  }
+  else{
+    const result = await res.json()
+    console.log(result)
+    const newTicketDetails = {issue:result.issue, status:result.status, priority: result.priority, updated_at:result.updated_at}
+    setTickets((prevTickets) => 
+      prevTickets.map((ticket) => 
+        ticket.id === data.id 
+          ? { ...ticket, ...newTicketDetails } // Merge the updated fields
+          : ticket // Keep old ticket completely as-is
+      )
+    );
+  }
+}
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] dark:bg-[#0d1117] transition-colors duration-300">
@@ -272,34 +375,70 @@ export default function TicketsPage() {
           {/* Filters & Search Row */}
           <div className="shrink-0 bg-white dark:bg-[#111827] border-b border-[#c6c6cd] dark:border-[#1e2535] px-6 py-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-medium text-[#0d1117] dark:text-white">All Tickets</h2>
+              <h2 className="text-base font-medium text-[#0d1117] dark:text-white">Tickets</h2>
               <Button size="sm" className="gap-1.5" onClick={()=>setShowTicketDialog(true)}>
                 <PlusIcon />
                 New Ticket
               </Button>
-              {/* Dialog */}
+              {/* Dialogs */}
 
               <CreateTicketDialog 
                   isOpen={showTicketDialog}
                   onClose={()=>setShowTicketDialog(false)}
                   onSubmit={handleCreateTicket}
+                  isSupport={user?.role && (user.role == 'SUPPORT_AGENT' || user.role == 'ADMIN') || false}
+                  onSubmitSupport = {handleCreateTicketSupport}
+              />
+
+              <TicketUpdateDialog
+              isOpen={showUpdateDialog}
+              currentDetails={{"id":selectedTicketId || -1,"issue":selectedTicket?.issue || "","priority": selectedTicket?.priority ||"low", "status": selectedTicket?.status ||"open"}}
+              onClose={()=>setShowUpdateDialog(false)}
+              onUpdate={handleTicketUpdate}
+              key={selectedTicketId}
               />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Search bar */}
               <div className="relative flex-1 max-w-[448px]">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#45464d] dark:text-[#9aa3bf]"><SearchIcon /></div>
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search tickets..."
+                  placeholder="Search tickets by issue..."
                   className="w-full pl-10 pr-4 py-2.5 bg-[#f7f9fb] dark:bg-[#1a2236] border border-[#c6c6cd] dark:border-[#2e3347] rounded-lg text-sm text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#6b7280] outline-none focus:border-[#2170e4] focus:ring-2 focus:ring-[#2170e4]/20 transition-all"
                 />
               </div>
-              {['Status: All', 'Priority: All'].map(label => (
-                <button key={label} className="flex items-center gap-1 px-3 py-2.5 bg-white dark:bg-[#1a2236] border border-[#c6c6cd] dark:border-[#2e3347] rounded-lg text-sm text-[#191c1e] dark:text-[#e2e4ef] hover:bg-[#f7f9fb] dark:hover:bg-[#252c3d] transition-colors">
-                  {label} <ChevronIcon />
-                </button>
-              ))}
+              {/* Status filter */}
+              <Button className='bg-sky-600'>
+                Status: 
+                <select defaultValue={0} value={statusFilter} className='text-black text-center rounded-sm' onChange={e=>setStatusFilter(parseInt(e.target.value))}>
+                  {statuses.map( (s,i) => 
+                    <option value={i}>{s}</option>
+                  )}
+                </select>
+              </Button>
+              
+
+              {/* Priority filter */}
+              <Button className='bg-sky-600'>
+                Priority:
+
+                <select defaultValue={0} value={priority} className='text-black text-center rounded-sm' onChange={e=>setPriority(parseInt(e.target.value))}>
+                  {priorities.map( (p,i) => 
+                    <option  value={i}>{p}</option>
+                  )}
+                </select>
+              </Button>
+
+              <Button className='bg-sky-600'>
+                nos.
+                <input type='number' value={perPage} className='text-black w-16 text-center rounded-sm' onChange={e=>setPerPage(isNaN(parseInt(e.target.value)) ? 0: parseInt(e.target.value))}/>
+              </Button>
+
+              <Button onClick={fetchTickets} className='bg-sky-600'>
+                Filter
+              </Button>
             </div>
           </div>
 
@@ -320,7 +459,7 @@ export default function TicketsPage() {
                 <tbody>
                   {filtered.map(ticket => (
                     <TicketRow
-                      key={ticket.id}
+                      key={ticket.ticket_ref}
                       ticket={ticket}
                       isSelected={selectedTicketId === ticket.id}
                       onSelect={() => setSelectedTicketId(ticket.id)}
@@ -329,18 +468,44 @@ export default function TicketsPage() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+
+              { currentTicketcount > perPage &&
+              <div className='w-full mx-[35%]'>
+                <Pagination total={currentTicketcount} per_page={perPage} onPageChange={setPage}/>
+              </div>
+              }
             </div>
 
             {/* Detail Panel */}
             <div className="w-[380px] border-l border-[#c6c6cd] dark:border-[#1e2535] shrink-0 shadow-[-4px_0_12px_rgba(0,0,0,0.02)]">
-              <TicketDetailPanel ticket={selectedTicket} />
+              <TicketDetailPanel ticket={selectedTicket} role={user?.role || 'CUSTOMER'} onUpdateTicket={()=>setShowUpdateDialog(true)} onClose={()=>setSelectedTicketId(null)}/>
             </div>
+            
             
           </div>
         </div>
 
         {/* ── MOBILE LAYOUT ── */}
         <div className="flex flex-col flex-1 min-h-0 md:hidden pt-16 pb-[69px]">
+          {/* Dialogs */}
+          <CreateTicketDialog 
+                  isOpen={showTicketDialog}
+                  onClose={()=>setShowTicketDialog(false)}
+                  onSubmit={handleCreateTicket}
+                  isSupport={user?.role && (user.role == 'SUPPORT_AGENT' || user.role == 'ADMIN') || false}
+                  onSubmitSupport = {handleCreateTicketSupport}
+              />
+
+              <TicketUpdateDialog
+              isOpen={showUpdateDialog}
+              currentDetails={{"id":selectedTicketId || -1,"issue":selectedTicket?.issue || "","priority": selectedTicket?.priority ||"low", "status": selectedTicket?.status ||"open"}}
+              onClose={()=>setShowUpdateDialog(false)}
+              onUpdate={handleTicketUpdate}
+              key={selectedTicketId}
+              />
+
           {/* Mobile Top Bar */}
           <div className="fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-md border-b border-[#c6c6cd] dark:border-[#1e2535] h-16 flex items-center justify-between px-4">
             <div className="flex items-center gap-3">
@@ -363,7 +528,7 @@ export default function TicketsPage() {
             {/* Header */}
             <div className="pt-4 pb-2 flex items-center justify-between">
               <h1 className="text-2xl font-black text-[#0d1117] dark:text-white">Tickets</h1>
-              <Button size="sm" className="gap-1.5 text-xs">
+              <Button size="sm" className="gap-1.5 text-xs" onClick={()=>setShowTicketDialog(true)}>
                 <PlusIcon />
                 New Ticket
               </Button>
@@ -372,8 +537,8 @@ export default function TicketsPage() {
             {/* Stats bento */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               {[
-                { label: 'ACTIVE', value: '24', color: '#0058be' },
-                { label: 'DUE TODAY', value: '05', color: '#ba1a1a' },
+                { label: 'TOTAL', value: totalTicketCount, color: '#0058be' },
+                { label: 'PENDING', value: pendingTicketCount, color: '#ba1a1a' },
               ].map(stat => (
                 <div key={stat.label} className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-xl p-4">
                   <p className="text-[11px] font-medium tracking-widest text-[#45464d] dark:text-[#9aa3bf]">{stat.label}</p>
@@ -392,12 +557,39 @@ export default function TicketsPage() {
                 className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#2e3347] rounded-xl text-sm text-[#191c1e] dark:text-[#e2e4ef] placeholder:text-[#6b7280] outline-none focus:border-[#2170e4] transition-all"
               />
             </div>
+            
+                          {/* Status filter */}
+              <Button className='bg-sky-600'>
+                Status: 
+                <select defaultValue={0} value={statusFilter} className='text-black text-center rounded-sm' onChange={e=>setStatusFilter(parseInt(e.target.value))}>
+                  {statuses.map( (s,i) => 
+                    <option value={i}>{s}</option>
+                  )}
+                </select>
+              </Button>
+              
+
+              {/* Priority filter */}
+              <Button className='bg-sky-600 mb-3'>
+                Priority:
+
+                <select defaultValue={0} value={priority} className='text-black text-center rounded-sm' onChange={e=>setPriority(parseInt(e.target.value))}>
+                  {priorities.map( (p,i) => 
+                    <option  value={i}>{p}</option>
+                  )}
+                </select>
+              </Button>
+
+              <Button onClick={fetchTickets} className='bg-sky-600 mb-3'>
+                Filter
+              </Button>
 
             {/* List header */}
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium text-[#45464d] dark:text-[#9aa3bf]">OPEN TICKETS</p>
               <button className="text-xs text-[#0058be] dark:text-[#4a9eff]">Sort by date</button>
             </div>
+            
 
             {/* Ticket cards */}
             <div className="space-y-3 pb-6">
@@ -408,11 +600,10 @@ export default function TicketsPage() {
                 )
                 .map(t => (
                   <MobileTicketCard
-                    key={t.id}
+                    key={t.ticket_ref}
                     ticket={t}
                     onSelect={() => {
-                      const full = tickets.find(mt => mt.customer_name === t.customer_name);
-                      setMobileSelectedId(full?.id ?? null);
+                      setMobileSelectedId(t.id ?? null);
                     }}
                   />
                 ))}
@@ -434,14 +625,17 @@ export default function TicketsPage() {
           </div> 
 
           {/* FAB */}
-          <button className="fixed right-5 bottom-[calc(69px+16px)] z-30 w-14 h-14 bg-[#0058be] hover:bg-[#004ca1] rounded-full flex items-center justify-center shadow-lg shadow-[#0058be]/30 transition-colors">
+          <button className="fixed right-5 bottom-[calc(69px+16px)] z-30 w-14 h-14 bg-[#0058be] hover:bg-[#004ca1] rounded-full flex items-center justify-center shadow-lg shadow-[#0058be]/30 transition-colors"
+          onClick={()=>setShowTicketDialog(true)}
+          >
             <FabPlusIcon />
           </button>
         </div>
 
         {/* Mobile ticket detail sheet */}
-        <MobileTicketSheet ticket={mobileSelectedTicket} onClose={() => setMobileSelectedId(null)} />
+        <MobileTicketSheet ticket={mobileSelectedTicket} onClose={() => setMobileSelectedId(null)} onUpdateTicket={()=>setShowUpdateDialog} role={user?.role || 'CUSTOMER'} />
       </div>
+      
 
       <MobileBottomNav />
     </div>
