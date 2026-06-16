@@ -71,7 +71,7 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpda
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-3 overflow-y-auto p-4 space-y-2 h-[150px] mid:h-[60%]">
+      <div className="flex-3 overflow-y-auto p-4 space-y-2 h-[150px] sm:h-[40%]">
           {/* Customer Context */}
           <h2>Ticket created by: {" "}{ticket.created_by}{" "}{`(${tkt_creator_role})`}</h2>
 
@@ -94,9 +94,8 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpda
               <p className="text-[11px] font-medium tracking-widest text-[#45464d] dark:text-[#9aa3bf] uppercase">Latest Message</p>
             </div>
             <div className="bg-white dark:bg-[#111827] border border-[#c6c6cd] dark:border-[#1e2535] rounded-br-xl rounded-bl-xl rounded-tr-xl p-4">
-              <p className="text-xs font-semibold text-[#0d1117] dark:text-white mb-2">Hi support team,</p>
               <p className="text-sm text-[#191c1e] dark:text-[#e2e4ef] leading-relaxed whitespace-pre-wrap">{latestMsg.content.text}</p>
-              <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-3">{new Date(latestMsg?.sent_at || '').toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) || ""}</p>
+              <p className="text-[11px] text-[#45464d] dark:text-[#9aa3bf] mt-3">{new Date(latestMsg?.sent_at || '').toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }) || ""}</p>
             </div>
           </div>
         )}

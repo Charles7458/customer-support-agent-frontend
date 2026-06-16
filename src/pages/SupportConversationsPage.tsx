@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useContext } from 'react';
-import { MessageBubble, AITypingRow, SecurityBanner } from '../components/ChatMessage';
+import { MessageBubble, AITypingRow, SecurityBanner, UserTypingRow } from '../components/ChatMessage';
 import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { Conversation } from '../types';
@@ -86,6 +86,7 @@ export default function SupportConversationsPage() {
   const {conversation_id} = useParams();
   const isMobile = window.matchMedia("(max-width: 760px)").matches;
   const otherAvatar = <Avatar name={(user?.role =="CUSTOMER" ? conv.agent_name : conv.customer_name)  || "U"} size={isMobile ? 'sm':'md'}/>
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -225,12 +226,15 @@ export default function SupportConversationsPage() {
         <header className="sticky top-0 z-30 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-md border-b border-[#c6c6cd] dark:border-[#1e2535] h-16 flex items-center justify-between px-6 shadow-sm shrink-0">
           {/* Mobile: Hamburger + title */}
           <div className="flex flex-col md:hidden">
-            <p className="font-bold text-[#0d1117] dark:text-white text-base text-ellipsis">{user?.role == "CUSTOMER" ? conv.agent_name : conv.customer_name}</p>
+            <p className="text-[#0d1117] dark:text-white text-base text-ellipsis">{user?.role == "CUSTOMER" ? conv.agent_name : conv.customer_name}</p>
             <OnlineIndicator isOnline={isOnline}/>
           </div>
           <div className="hidden md:flex flex-col">
-            <p className="text-base font-medium text-[#191c1e] dark:text-white">{conv.title}</p>
-            <OnlineIndicator isOnline={isOnline}/>
+            <p className="text-base text-ellipsis font-medium text-slate-700 dark:text-white">{conv.title}</p>
+            <div className='flex'>
+                <p className="text-dark dark:text-white text-base text-ellipsis me-5">{user?.role == "CUSTOMER" ? conv.agent_name : conv.customer_name}</p>
+                <OnlineIndicator isOnline={isOnline}/>
+            </div>
           </div>
           <div className="flex items-center gap-3 text-[#45464d] dark:text-[#9aa3bf]">
             <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f7f9fb] dark:hover:bg-[#1e2535] transition-colors"><BellIcon /></button>
@@ -250,7 +254,7 @@ export default function SupportConversationsPage() {
                 </ErrorBoundary>
 
               ))}
-              {isTyping && <AITypingRow />}
+              {isTyping && <UserTypingRow OtherAvatar={otherAvatar} />}
               <div ref={bottomRef} />
             </div>
           </div>

@@ -46,7 +46,8 @@ export interface ChatMessage {
   role: MessageRole;
   content: {
     text : string;
-    order_card?: OrderCard | null;
+    order_cards?: OrderCard[] | null;
+    order_card?: OrderCard[] | null;
     tracking?: { trackingID: string; carrier: string } | null;
     bullet_list?: string[] | null;
   }

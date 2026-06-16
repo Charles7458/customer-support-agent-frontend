@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { TrackingWidget } from '../types';
+import type { OrderStatus, TrackingWidget } from '../types';
 import type { ChatMessage } from '../types/index.ts';
 import { cn } from '../utils/cn';
-import { TypingIndicator } from './ui';
+import { TypingIndicator, Avatar } from './ui';
 
 // ─── AI Avatar ────────────────────────────────────────────────────────────────
 export function AIAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
@@ -16,11 +16,46 @@ export function AIAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
   );
 }
 
+const ORDER_STATUS_COLORS = {
+  Ordered: {
+    bg: "bg-slate-100 dark:bg-slate-800",
+    border: "border-slate-300 dark:border-slate-700",
+    text: "text-slate-800 dark:text-slate-200",
+  },
+
+  Shipped: {
+    bg: "bg-blue-100 dark:bg-blue-950",
+    border: "border-blue-300 dark:border-blue-800",
+    text: "text-blue-800 dark:text-blue-300",
+  },
+
+  "Out for Delivery": {
+    bg: "bg-amber-100 dark:bg-amber-950",
+    border: "border-amber-300 dark:border-amber-800",
+    text: "text-amber-800 dark:text-amber-300",
+  },
+
+  Delivered: {
+    bg: "bg-green-100 dark:bg-green-950",
+    border: "border-green-300 dark:border-green-800",
+    text: "text-green-800 dark:text-green-300",
+  },
+
+  "Delivery Failed": {
+    bg: "bg-red-100 dark:bg-red-950",
+    border: "border-red-300 dark:border-red-800",
+    text: "text-red-800 dark:text-red-300",
+  },
+} as const;
+
 // ─── Order Card ────────────────────────────────────────────────────────────────
-function OrderCard({ orderId, status }: { orderId: string; status: string; }) {
+function OrderCard({ orderId, status, productName }: { orderId: string; status: OrderStatus; productName: string;}) {
+  const statusColors = ORDER_STATUS_COLORS[status]
+  // previous outer bg and border : bg-[#f7f9fb] dark:bg-[#1e2535] border border-[#c6c6cd] dark:border-[#2e3347]
+  // previous inner bg : bg-[#eceef0] dark:bg-[#252c3d]
   return (
-    <div className="flex items-center gap-4 bg-[#f7f9fb] dark:bg-[#1e2535] border border-[#c6c6cd] dark:border-[#2e3347] rounded-xl p-4 mt-3">
-      <div className="w-16 h-16 bg-[#eceef0] dark:bg-[#252c3d] rounded-lg flex items-center justify-center shrink-0">
+    <div className={`flex items-center gap-4 border ${statusColors.border} ${statusColors.bg} rounded-xl p-4 mt-3`}>
+      <div className="w-16 h-16  rounded-lg flex items-center justify-center shrink-0">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#45464d" strokeWidth="1.5">
           <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3m-1 11h6m-3-3l3 3-3 3" />
           <rect x="9" y="11" width="14" height="10" rx="2" />
@@ -28,7 +63,8 @@ function OrderCard({ orderId, status }: { orderId: string; status: string; }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-bold text-[#191c1e] dark:text-white text-sm">{orderId}</p>
-        <p className="text-sm font-medium">{status}</p>
+        <p className="font-bold text-[#191c1e] dark:text-white text-sm">{productName}</p>
+        <p className={`text-sm font-medium ${statusColors.text}`}>{status}</p>
       </div>
       <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
         <path d="M1 1l5 5-5 5" stroke="#45464d" strokeWidth="1.5" strokeLinecap="round" />
@@ -195,7 +231,7 @@ export function MessageBubble({ message, isMobile, role ,OtherAvatar}: { message
   console.log(message)
   const isUser = message.role.toLowerCase() === role.toLowerCase();
   // console.log("user:"+role+"\nmessage_role:"+message.role)
-  const timeString = new Date(message.sent_at || '').toLocaleString('en-US', {
+  const timeString = new Date(message.sent_at || '').toLocaleString('en-IN', {
     year: 'numeric',    // "2026"
     month: 'short',     // "Jun"
     day: 'numeric',     // "10"
@@ -249,12 +285,24 @@ export function MessageBubble({ message, isMobile, role ,OtherAvatar}: { message
 
             {message.widget?.type === 'tracking' && <TrackingWidgetCard widget={message.widget} />}
 */}
-            {message.content.order_card && (
+            {message.content.order_cards && (message.content.order_cards.map(
+              order =>
               <OrderCard
-                orderId={message.content.order_card.order_id}
-                status={message.content.order_card.status}
+                orderId={order.order_id}
+                productName={order.product_name}
+                status={order.status}
               />
+            )
             )} 
+            {message.content.order_card && (message.content.order_card.map(
+              order =>
+              <OrderCard
+                orderId={order.order_id}
+                productName={order.product_name}
+                status={order.status}
+              />
+            )
+            )}
           </div>
         </div>
 
@@ -271,6 +319,19 @@ export function AITypingRow({ isMobile }: { isMobile?: boolean }) {
   return (
     <div className="flex gap-3 md:gap-4 items-start opacity-70">
       <AIAvatar size={isMobile ? 'sm' : 'md'} />
+      <div className="bg-[#eceef0] dark:bg-[#1e2535] border border-[#c6c6cd] dark:border-[#2e3347] rounded-bl-2xl rounded-br-2xl rounded-tl-sm rounded-tr-2xl">
+        <TypingIndicator />
+      </div>
+    </div>
+  );
+}
+
+export function UserTypingRow({ OtherAvatar}: { OtherAvatar:JSX.Element }) {
+  return (
+    <div className="flex gap-3 md:gap-4 items-start opacity-70">
+      {
+        OtherAvatar
+      }
       <div className="bg-[#eceef0] dark:bg-[#1e2535] border border-[#c6c6cd] dark:border-[#2e3347] rounded-bl-2xl rounded-br-2xl rounded-tl-sm rounded-tr-2xl">
         <TypingIndicator />
       </div>

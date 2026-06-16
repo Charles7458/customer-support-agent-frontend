@@ -123,6 +123,7 @@ export default function ProfilePage() {
 
   // Validate profile form
   const validateProfile = (): boolean => {
+    console.log("validateProfile fired")
     const newErrors: FormErrors = {};
 
     if (!fullName.trim()) {
@@ -135,21 +136,28 @@ export default function ProfilePage() {
     }
 
     setErrors(newErrors);
+    console.log(newErrors)
     return Object.keys(newErrors).length === 0;
   };
 
 
   // Handle profile update
   const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateProfile()) return;
+    console.log("handle profile fired")
+    if(e){
+     e.preventDefault();
+    }
+    if (!validateProfile()) {
+      console.log("validation failed (profile)")
+      return
+    };
 
     setIsSubmitting(true);
     try {
       const newName = fullName
       // API call to update profile
-      const res = await fetch(`${SERVER_URL}users/update-name`, {
+      const res = await fetch(`${SERVER_URL}users/update-name`, 
+      {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -417,6 +425,7 @@ export default function ProfilePage() {
                   size="md"
                   disabled={isSubmitting}
                   className="w-full"
+                  onClick={handleProfileUpdate}
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
