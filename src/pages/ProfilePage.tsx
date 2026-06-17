@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth22';
+import { useAuth } from '../hooks/useAuth';
 import { Sidebar } from '../components/Sidebar';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { Input } from '../components/FormInputs';

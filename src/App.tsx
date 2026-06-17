@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme';
-import { AuthProvider } from './hooks/useAuth22';
+import { AuthProvider } from './hooks/useAuth';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
