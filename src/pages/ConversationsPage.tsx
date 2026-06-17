@@ -5,7 +5,7 @@ import { MobileBottomNav } from '../components/MobileBottomNav';
 import { Conversation } from '../types';
 import { Avatar } from '../components/ui';
 import { mockConversations } from '../data/mockData';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth22';
 import { NavLink } from 'react-router-dom';
 import { connectSocket, subscribeToMessages, sendMessage } from '../utils/chatSocket';
 import type { ChatMessage } from '../types';

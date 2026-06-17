@@ -6,7 +6,7 @@ import { Dialog } from '../components/Dialog';
 import { Badge, Avatar, PriorityIcon, Button } from '../components/ui';
 import type { Ticket, CreateTicketRequest, CreateTicketRequestSupport, MessageRole, TicketPriority, TicketStatus } from '../types';
 import { cn } from '../utils/cn';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth22';
 import { NavLink } from 'react-router-dom';
 import { CreateTicketDialog } from '../components/CreateTicketDialog';
 import Pagination from '../components/Pagination';
