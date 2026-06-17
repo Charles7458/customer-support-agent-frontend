@@ -26,9 +26,10 @@ interface TicketDetailPanelProps {
   isMobileSheet?: boolean;
   role: MessageRole;
   onUpdateTicket: ()=>void
+  onGenerateResponse: ()=>void
 }
 
-export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpdateTicket }: TicketDetailPanelProps) {
+export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpdateTicket, onGenerateResponse}: TicketDetailPanelProps) {
 
   const tkt_creator_role = get_role(ticket?.creator_role || 'CUSTOMER')
   if (!ticket) {
@@ -71,7 +72,7 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpda
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-3 overflow-y-auto p-4 space-y-2 h-[150px] sm:h-[40%]">
+      <div className="flex-3 overflow-y-auto p-4 space-y-2 h-[150px] md:h-[55%]">
           {/* Customer Context */}
           <h2>Ticket created by: {" "}{ticket.created_by}{" "}{`(${tkt_creator_role})`}</h2>
 
@@ -133,6 +134,7 @@ export function TicketDetailPanel({ ticket, onClose, isMobileSheet, role, onUpda
         
         <Button variant="ai" className="w-full gap-2"
             disabled = {(ticket.status && (ticket.status=="closed" || ticket.status=="pending")) || false}
+            onClick={onGenerateResponse}
         >
           <StarIcon />
           Generate AI Response

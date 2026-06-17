@@ -8,6 +8,7 @@ import ConversationsPage from './pages/ConversationsPage';
 import TicketsPage from './pages/TicketsPage';
 import ProfilePage from './pages/ProfilePage';
 import SupportConversationsPage from './pages/SupportConversationsPage';
+import InsertPage from './pages/InsertPage';
 
 
 export default function App() {
@@ -86,6 +87,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/insert"
+              element={
+                <ProtectedRoute>
+                  <InsertPage />
                 </ProtectedRoute>
               }
             />

@@ -11,6 +11,7 @@ import { NavLink } from 'react-router-dom';
 import { CreateTicketDialog } from '../components/CreateTicketDialog';
 import Pagination from '../components/Pagination';
 import { TicketUpdateDialog } from '../components/TicketUpdateDialog';
+import AIResponseDialog from '../components/AIResponseDialog';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -154,7 +155,7 @@ function MobileTicketCard({ ticket, onSelect }: {
 }
 
 // ─── Mobile Ticket Sheet ──────────────────────────────────────────────────────
-function MobileTicketSheet({ ticket,role, onClose , onUpdateTicket}: { ticket: Ticket | null; role:MessageRole ;onClose: () => void ;onUpdateTicket: () => void}) {
+function MobileTicketSheet({ ticket,role, onClose , onUpdateTicket, onGenerateResponse}: { ticket: Ticket | null; role:MessageRole ;onClose: () => void ;onUpdateTicket: () => void, onGenerateResponse: () => void}) {
   if (!ticket) return null;
   return (
     <div className="fixed inset-0 z-50 md:hidden">
@@ -162,7 +163,7 @@ function MobileTicketSheet({ ticket,role, onClose , onUpdateTicket}: { ticket: T
       <div className="absolute bottom-0 left-0 right-0 bg-[#f7f9fb] dark:bg-[#0d1117] rounded-t-2xl max-h-[92vh] flex flex-col">
         <div className="w-12 h-1 bg-[#c6c6cd] dark:bg-[#2e3347] rounded-full mx-auto mt-3 mb-1 shrink-0" />
         <div className="flex-1 min-h-0">
-          <TicketDetailPanel ticket={ticket} onClose={onClose} isMobileSheet onUpdateTicket={onUpdateTicket} role={role}/>
+          <TicketDetailPanel ticket={ticket} onClose={onClose} isMobileSheet onUpdateTicket={onUpdateTicket} role={role} onGenerateResponse={onGenerateResponse}/>
         </div>
       </div>
     </div>
@@ -190,7 +191,8 @@ export default function TicketsPage() {
   const [mobileSelectedId, setMobileSelectedId] = useState<number | null>(null);
   const [showTicketDialog,setShowTicketDialog] = useState(false)
   const [showUpdateDialog,setShowUpdateDialog] = useState(false)
-  const [perPage, setPerPage] = useState(10);
+  const [showResponseDialog,setShowResponseDialog] = useState(false)
+  const [perPage, setPerPage] = useState(7);
   const authContext = useAuth();
   const user = authContext.user;
   const agentOrUser = user?.role == "CUSTOMER" ? "Agent" : "CUSTOMER"
@@ -395,7 +397,14 @@ async function handleTicketUpdate(data : {id:number, issue:string, priority: Tic
               currentDetails={{"id":selectedTicketId || -1,"issue":selectedTicket?.issue || "","priority": selectedTicket?.priority ||"low", "status": selectedTicket?.status ||"open"}}
               onClose={()=>setShowUpdateDialog(false)}
               onUpdate={handleTicketUpdate}
-              key={selectedTicketId}
+              key={selectedTicketId+"TUD"}
+              />
+              <AIResponseDialog
+              taggedMessage={selectedTicket?.last_message?.content.text || ""}
+              role={user?.role || "CUSTOMER"}
+              isOpen={showResponseDialog}
+              onClose={()=>setShowResponseDialog(false)}
+              key={selectedTicketId+"AID"}
               />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -459,7 +468,7 @@ async function handleTicketUpdate(data : {id:number, issue:string, priority: Tic
                 <tbody>
                   {filtered.map(ticket => (
                     <TicketRow
-                      key={ticket.ticket_ref}
+                      key={ticket.id}
                       ticket={ticket}
                       isSelected={selectedTicketId === ticket.id}
                       onSelect={() => setSelectedTicketId(ticket.id)}
@@ -480,7 +489,7 @@ async function handleTicketUpdate(data : {id:number, issue:string, priority: Tic
 
             {/* Detail Panel */}
             <div className="w-[380px] border-l border-[#c6c6cd] dark:border-[#1e2535] shrink-0 shadow-[-4px_0_12px_rgba(0,0,0,0.02)]">
-              <TicketDetailPanel ticket={selectedTicket} role={user?.role || 'CUSTOMER'} onUpdateTicket={()=>setShowUpdateDialog(true)} onClose={()=>setSelectedTicketId(null)}/>
+              <TicketDetailPanel ticket={selectedTicket} role={user?.role || 'CUSTOMER'} onUpdateTicket={()=>setShowUpdateDialog(true)} onClose={()=>setSelectedTicketId(null)} onGenerateResponse={()=>setShowResponseDialog(true)}/>
             </div>
             
             
@@ -503,9 +512,15 @@ async function handleTicketUpdate(data : {id:number, issue:string, priority: Tic
               currentDetails={{"id":selectedTicketId || -1,"issue":selectedTicket?.issue || "","priority": selectedTicket?.priority ||"low", "status": selectedTicket?.status ||"open"}}
               onClose={()=>setShowUpdateDialog(false)}
               onUpdate={handleTicketUpdate}
-              key={selectedTicketId}
+              key={selectedTicketId+"TUDMobile"}
               />
-
+              <AIResponseDialog
+              taggedMessage={selectedTicket?.last_message?.content.text || ""}
+              role={user?.role || "CUSTOMER"}
+              isOpen={showResponseDialog}
+              onClose={()=>setShowResponseDialog(false)}
+              key={selectedTicketId+"AIDMobile"}
+              />
           {/* Mobile Top Bar */}
           <div className="fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-md border-b border-[#c6c6cd] dark:border-[#1e2535] h-16 flex items-center justify-between px-4">
             <div className="flex items-center gap-3">
@@ -633,7 +648,7 @@ async function handleTicketUpdate(data : {id:number, issue:string, priority: Tic
         </div>
 
         {/* Mobile ticket detail sheet */}
-        <MobileTicketSheet ticket={mobileSelectedTicket} onClose={() => setMobileSelectedId(null)} onUpdateTicket={()=>setShowUpdateDialog} role={user?.role || 'CUSTOMER'} />
+        <MobileTicketSheet ticket={mobileSelectedTicket} onClose={() => setMobileSelectedId(null)} onUpdateTicket={()=>setShowUpdateDialog} role={user?.role || 'CUSTOMER'} onGenerateResponse={()=>setShowResponseDialog(true)} />
       </div>
       
 
