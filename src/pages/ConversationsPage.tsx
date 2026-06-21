@@ -46,7 +46,7 @@ function MicIcon() {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_API_URL}/chat`
-
+const REDACT_URL = `${import.meta.env.VITE_REDACT_URL}`
 export default function ConversationsPage() {
   const [conv, setConv] = useState<Conversation>(mockConversations[0]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -89,19 +89,19 @@ export default function ConversationsPage() {
     setSendingChat(true)
     try {
     
-      // const res = await fetch(CHAT_URL+"/redact",{
-      //   method: "POST",
-      //   headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //   credentials: 'include',
-      //   body: JSON.stringify({
-      //     input
-      //   })
-      // })
+      const res = await fetch(REDACT_URL,{
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+          },
+        credentials: 'include',
+        body: JSON.stringify({
+          input
+        })
+      })
         
-      // const response = await res.json()
-      // console.log(response)
+      const response = await res.json()
+      console.log(response)
       // const message: ChatMessage = normalizeChatMessage(response);
       const message: ChatMessage = {
         "id": 10,
