@@ -21,14 +21,7 @@ function BellIcon() {
     </svg>
   );
 }
-// function PersonIcon() {
-//   return (
-//     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-//       <circle cx="9" cy="6" r="4" />
-//       <path d="M1 18c0-4.4 3.6-8 8-8s8 3.6 8 8" />
-//     </svg>
-//   );
-// }
+
 function SendIcon() {
   return (
     <svg width="19" height="16" viewBox="0 0 19 16" fill="white">
@@ -96,25 +89,25 @@ export default function ConversationsPage() {
     setSendingChat(true)
     try {
     
-      const res = await fetch(CHAT_URL+"/redact",{
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json',
-          },
-        credentials: 'include',
-        body: JSON.stringify({
-          input
-        })
-      })
+      // const res = await fetch(CHAT_URL+"/redact",{
+      //   method: "POST",
+      //   headers: {
+      //       'Content-Type': 'application/json',
+      //     },
+      //   credentials: 'include',
+      //   body: JSON.stringify({
+      //     input
+      //   })
+      // })
         
-      const response = await res.json()
-      console.log(response)
+      // const response = await res.json()
+      // console.log(response)
       // const message: ChatMessage = normalizeChatMessage(response);
       const message: ChatMessage = {
         "id": 10,
         "role": 'CUSTOMER',
         "content":{
-          "text": response
+          "text": input
         },
         "sent_at": new Date()
       };
@@ -154,34 +147,7 @@ export default function ConversationsPage() {
     fetchChat()
   },[user])
 
-  // const sendMessage = () => {
-  //   const trimmed = input.trim();
-  //   if (!trimmed) return;
 
-  //   const userMsg: ChatMessage = {
-  //     id: `msg-${Date.now()}`,
-  //     role: 'user',
-  //     content: trimmed,
-  //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  //     status: 'sent',
-  //   };
-
-  //   setMessages(prev => [...prev, userMsg]);
-  //   setInput('');
-  //   setIsTyping(true);
-
-  //   // setTimeout(() => {
-  //   //   const aiMsg: ChatMessage = {
-  //   //     id: `msg-${Date.now()}-ai`,
-  //   //     role: 'ai',
-  //   //     content: "I've received your message and I'm looking into it right now. Our team will ensure your issue is resolved as quickly as possible.",
-  //   //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  //   //   };
-  //   //   setMessages(prev => [...prev, aiMsg]);
-  //   //   setIsTyping(false);
-  //   // }, 2000);
-
-  // };
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] dark:bg-[#0d1117] transition-colors duration-300">

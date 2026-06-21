@@ -118,20 +118,6 @@ export default function SupportConversationsPage() {
     setSendingChat(true)
     try {
     
-      // const res = await fetch(CHAT_URL+"/redact",{
-      //   method: "POST",
-      //   headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //   credentials: 'include',
-      //   body: JSON.stringify({
-      //     input
-      //   })
-      // })
-        
-      // const response = await res.json()
-      // console.log(response)
-      // const message: ChatMessage = normalizeChatMessage(response);
       const message: ChatMessage = {
         "id": null,
         "role": user?.role || "CUSTOMER",
@@ -184,34 +170,6 @@ export default function SupportConversationsPage() {
     fetchChat()
   },[user, conversation_id])
 
-  // const sendMessage = () => {
-  //   const trimmed = input.trim();
-  //   if (!trimmed) return;
-
-  //   const userMsg: ChatMessage = {
-  //     id: `msg-${Date.now()}`,
-  //     role: 'user',
-  //     content: trimmed,
-  //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  //     status: 'sent',
-  //   };
-
-  //   setMessages(prev => [...prev, userMsg]);
-  //   setInput('');
-  //   setIsTyping(true);
-
-  //   // setTimeout(() => {
-  //   //   const aiMsg: ChatMessage = {
-  //   //     id: `msg-${Date.now()}-ai`,
-  //   //     role: 'ai',
-  //   //     content: "I've received your message and I'm looking into it right now. Our team will ensure your issue is resolved as quickly as possible.",
-  //   //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  //   //   };
-  //   //   setMessages(prev => [...prev, aiMsg]);
-  //   //   setIsTyping(false);
-  //   // }, 2000);
-
-  // };
 
   return (
     <div className="flex h-screen bg-[#f7f9fb] dark:bg-[#0d1117] transition-colors duration-300">
