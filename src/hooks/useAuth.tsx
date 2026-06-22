@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const AUTH_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isLoading: false,
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const login_url = `${AUTH_URL}/login`;
-
+      console.log("LOGIN_URL:"+login_url)
       const res = await fetch(login_url, {
         method: 'POST',
         headers: {
