@@ -72,7 +72,7 @@ function OnlineIndicator({isOnline}: {isOnline: boolean}) {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_API_URL}/support-chat`
-
+const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_URL}`
 export default function SupportConversationsPage() {
   const [conv, setConv] = useState<Conversation>(mockConversations[0]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -94,7 +94,7 @@ export default function SupportConversationsPage() {
 
   // connect to websocket
   useEffect(() => {
-    const websocket_url = `ws://localhost:8000/support-chat/ws/${conversation_id}`
+    const websocket_url = WEBSOCKET_URL+`/support-chat/ws/${conversation_id}`
     connectSocket(websocket_url,setIsOnline,setIsTyping);
     const unsubscribe = subscribeToMessages(
       (message: ChatMessage) => {

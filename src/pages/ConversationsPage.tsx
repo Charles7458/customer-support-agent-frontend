@@ -47,6 +47,8 @@ function MicIcon() {
 
 const CHAT_URL = `${import.meta.env.VITE_API_URL}/chat`
 const REDACT_URL = `${import.meta.env.VITE_REDACT_URL}`
+const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_URL}`
+
 export default function ConversationsPage() {
   const [conv, setConv] = useState<Conversation>(mockConversations[0]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -66,7 +68,7 @@ export default function ConversationsPage() {
 
   // connect to websocket
   useEffect(() => {
-    const websocket_url = "ws://localhost:8000/chat/ws"
+    const websocket_url = WEBSOCKET_URL+"/chat/ws"
     connectSocket(websocket_url,setIsOnline,setIsTyping);
 
     const unsubscribe = subscribeToMessages(
@@ -94,7 +96,6 @@ export default function ConversationsPage() {
         headers: {
             'Content-Type': 'application/json',
           },
-        credentials: 'include',
         body: JSON.stringify({
           input
         })
