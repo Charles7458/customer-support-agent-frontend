@@ -108,7 +108,7 @@ export default function ConversationsPage() {
         "id": 10,
         "role": 'CUSTOMER',
         "content":{
-          "text": input
+          "text": response
         },
         "sent_at": new Date()
       };
