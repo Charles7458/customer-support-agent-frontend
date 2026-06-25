@@ -102,7 +102,8 @@ export default function InsertPage() {
     });
 
     if(res.ok){
-        alert("Order added")
+        const result = await res.json()
+        alert(`Order added. Order ID is ${result.id}`)
     }
     else{
         alert("Insertion Failed")

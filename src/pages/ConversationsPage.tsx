@@ -62,9 +62,11 @@ export default function ConversationsPage() {
   const isMobile = window.matchMedia("(max-width: 760px)").matches;
   const OtherAvatar = <AIAvatar size={isMobile ? 'sm':'md'}/>
 
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
 
   // connect to websocket
   useEffect(() => {
@@ -128,8 +130,7 @@ export default function ConversationsPage() {
   // Fetching chat history
   useEffect( () => {
     const fetchChat = async () => {
-      console.log("API_URL:"+import.meta.env.VITE_API_URL)
-      console.log("CHAT_URL:"+CHAT_URL)
+
       const res = await fetch(`${CHAT_URL}`, {
         method: 'GET',
         credentials: 'include',

@@ -229,6 +229,7 @@ export function SecurityBanner() {
 export function MessageBubble({ message, isMobile, role ,OtherAvatar}: { message: ChatMessage; isMobile?: boolean; role:string ,
   OtherAvatar: JSX.Element}) {
   console.log(message)
+  console.log(message.role+"<- msg, user->"+role)
   const isUser = message.role.toLowerCase() === role.toLowerCase();
   // console.log("user:"+role+"\nmessage_role:"+message.role)
   const timeString = new Date(message.sent_at || '').toLocaleString('en-IN', {
