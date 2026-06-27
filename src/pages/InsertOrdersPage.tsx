@@ -109,7 +109,7 @@ export default function InserOrdersPage(){
 
     }
     return (
-        <div>
+        <div className="mx-auto max-w-4xl space-y-8 p-6">
             {/* ORDERS */}
             <div className="rounded-lg border p-6">
                 <h2 className="mb-4 text-xl font-semibold">
