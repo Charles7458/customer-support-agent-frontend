@@ -9,7 +9,7 @@ import TicketsPage from './pages/TicketsPage';
 import ProfilePage from './pages/ProfilePage';
 import SupportConversationsPage from './pages/SupportConversationsPage';
 import InsertPage from './pages/InsertPage';
-
+import InserOrdersPage from './pages/InsertOrdersPage';
 
 export default function App() {
   return (
@@ -95,6 +95,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <InsertPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <InserOrdersPage />
                 </ProtectedRoute>
               }
             />
