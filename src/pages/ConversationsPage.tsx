@@ -108,7 +108,7 @@ export default function ConversationsPage() {
       // const message: ChatMessage = normalizeChatMessage(response);
       const message: ChatMessage = {
         "id": 10,
-        "role": 'CUSTOMER',
+        "role": user?.role || "CUSTOMER",
         "content":{
           "text": response
         },
