@@ -114,6 +114,7 @@ export default function ConversationsPage() {
         },
         "sent_at": new Date()
       };
+      console.log("message to be sent: "+message)
 
       sendMessage(message);
 
